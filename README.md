@@ -4,8 +4,8 @@
 
 **在线访问（主站）：https://signal-ai-news.stock-backend-wkl.workers.dev**
 
-旧地址 https://2432448868.github.io/AI-News/ 已改为迁移提示页，自动跳转到主站。
-代码仓库：https://github.com/2432448868/AI-News
+旧地址 https://2432448868.github.io/AI-News/ 随账号改名已失效（GitHub Pages 不做旧域名跳转）；新 Pages 地址 https://KellonWww.github.io/AI-News/ 为迁移提示页，自动跳转到主站。
+代码仓库：https://github.com/KellonWww/AI-News
 
 2026-10-03 首次 Actions 部署通过，7/7 免费来源同步成功，首发线上快照 164 条。
 
@@ -38,7 +38,7 @@ npm run preview         # 预览 dist；先运行 npm run build
 
 ## 发布到 GitHub Pages
 
-GitHub Pages 地址（https://2432448868.github.io/AI-News/）现为**迁移提示页**：
+GitHub Pages 地址（https://KellonWww.github.io/AI-News/）现为**迁移提示页**：
 `.github/workflows/deploy.yml` 在 push main 时把 `redirect/index.html` 部署上去，提示访客前往 Cloudflare 主站；不再采集数据，也没有定时任务。
 
 - 在仓库 Settings → Pages → Build and deployment 中选择 **GitHub Actions** 后，push 即自动部署跳转页。
