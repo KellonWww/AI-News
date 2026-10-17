@@ -203,7 +203,7 @@ test('empty valid feed has an honest empty state', async ({ page }) => {
 test('mobile widths never overflow and reduced motion is respected', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await mock(page);
-  for (const width of [360, 390, 768, 1440]) {
+  for (const width of [320, 360, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -295,4 +295,23 @@ test('entity tags and China focus combine, clear and preserve keyboard focus', a
   await expect(page.locator('.news-card')).toHaveCount(12);
   await expect(page.locator('#china-filter')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('#active-tag')).toBeHidden();
+});
+
+test('editorial layout keeps the signal artwork, local font and responsive reading index', async ({
+  page,
+}) => {
+  await mock(page);
+  await expect(page.locator('.hero-wordmark')).toHaveText('signal.');
+  await expect(page.locator('.signal-art svg')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('16px Outfit'))).toBe(true);
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 1080 });
+    const index = await page.locator('.discover-index').boundingBox();
+    const content = await page.locator('.discover-content').boundingBox();
+    expect(index).not.toBeNull();
+    expect(content).not.toBeNull();
+    if (width === 1440) expect(content.x).toBeGreaterThan(index.x + index.width);
+    else expect(content.y).toBeGreaterThan(index.y + index.height);
+  }
 });

@@ -1,150 +1,54 @@
-/* Layered light, not neon: the original palette remains the source of truth. */
 .reading-progress {
   position: fixed;
+  z-index: 100;
   top: 0;
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent), #a6c695);
+  background: var(--accent);
   transform: scaleX(0);
   transform-origin: left;
-  z-index: 100;
   pointer-events: none;
-}
-.site-header {
-  transition:
-    box-shadow 0.3s,
-    background 0.3s;
 }
 .site-header.is-scrolled {
-  box-shadow: 0 8px 30px #1420180a;
+  border-bottom-color: var(--line-strong);
 }
-.hero {
-  isolation: isolate;
-  background-image: radial-gradient(ellipse at 95% 0%, #adc69b14, transparent 65%);
-}
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(
-    380px circle at var(--spot-x, 75%) var(--spot-y, 50%),
-    #b7d0a635,
-    transparent 75%
-  );
-  transition: opacity 0.45s;
-  z-index: -1;
-}
-.hero.pointer-active::before {
-  opacity: 1;
-}
-.hero-paper {
-  transition: translate 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.hero.pointer-active .hero-paper {
-  translate: var(--hero-x, 0px) var(--hero-y, 0px);
-}
-.news-card {
-  position: relative;
-  isolation: isolate;
-}
-.news-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(
-    260px circle at var(--spot-x, 50%) var(--spot-y, 0%),
-    #a2c18912,
-    transparent 75%
-  );
-  opacity: 0;
-  transition: opacity 0.3s;
-  z-index: -1;
-}
-.news-card.pointer-active::before {
-  opacity: 1;
+.signal-art svg {
+  transition: translate 0.35s ease-out;
 }
 @media (hover: hover) and (pointer: fine) {
-  .news-card.pointer-active {
-    transform: perspective(1000px) translateY(-5px) rotateX(var(--tilt-x, 0deg))
-      rotateY(var(--tilt-y, 0deg));
-    box-shadow: 0 16px 36px #1420180d;
-    border-color: var(--hover-border);
+  .hero.pointer-active .signal-art svg {
+    translate: calc(var(--hero-x, 0px) * 0.12) calc(var(--hero-y, 0px) * 0.12);
   }
-  .brand:hover .brand-mark {
-    transform: rotate(-8deg);
+  .news-card:hover .card-title {
+    color: var(--accent);
+  }
+  .news-card:hover .card-title > .icon {
+    translate: 2px -2px;
   }
 }
-.brand-mark {
-  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.category-tab {
-  transition:
-    background 0.25s,
-    color 0.25s,
-    box-shadow 0.25s,
-    transform 0.25s;
-}
-.category-tab.selected {
-  box-shadow: 0 3px 12px #14201812;
-}
-.search-box {
-  transition:
-    box-shadow 0.25s,
-    border-color 0.25s;
-}
-.search-box:focus-within {
-  box-shadow:
-    0 0 0 4px var(--focus-soft),
-    0 7px 22px #14201808;
-}
-.save-button.is-saved .icon {
-  filter: drop-shadow(0 2px 3px #82a96a25);
+.card-title > .icon {
+  transition: translate 0.2s;
 }
 dialog[open] {
-  animation: panel-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation: dialog-enter 0.2s ease-out;
 }
-dialog[open]::backdrop {
-  animation: backdrop-in 0.28s ease-out;
-}
-@keyframes panel-in {
+@keyframes dialog-enter {
   from {
-    opacity: 0;
-    translate: 0 12px;
-    scale: 0.98;
+    translate: 0 8px;
   }
   to {
-    opacity: 1;
     translate: 0 0;
-    scale: 1;
-  }
-}
-@keyframes backdrop-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-paper,
-  .news-card,
-  .primary-button,
-  .brand-mark {
-    transform: none !important;
-    translate: none !important;
-  }
-  dialog[open],
-  dialog[open]::backdrop {
+  *,
+  *::before,
+  *::after {
     animation: none !important;
+    transition: none !important;
   }
-  .hero::before,
-  .news-card::before {
-    display: none;
+  .signal-art svg {
+    translate: none !important;
   }
 }

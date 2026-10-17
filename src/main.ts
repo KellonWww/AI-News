@@ -3,7 +3,13 @@ import './style.css';
 import './motion.css';
 import { initMotion } from './motion';
 import shell from './shell.html?raw';
-import { CATEGORY_LABELS, escapeHtml as esc, filterItems, growthDelta, validateFeed } from './data.mjs';
+import {
+  CATEGORY_LABELS,
+  escapeHtml as esc,
+  filterItems,
+  growthDelta,
+  validateFeed,
+} from './data.mjs';
 import type { Category, Feed, Item } from './types';
 
 /** Cloud mode talks to the live API; static mode reads a frozen feed.json snapshot. */
@@ -140,7 +146,7 @@ function syncTheme() {
   get('#theme-toggle').setAttribute('aria-label', dark ? '切换浅色模式' : '切换深色模式');
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', dark ? '#141917' : '#f7f8fa');
+    ?.setAttribute('content', dark ? '#142126' : '#f0ecdf');
 }
 function toast(message: string) {
   get('#toast').textContent = message;
@@ -519,28 +525,26 @@ function loadArchive(date?: string) {
             archiveDays = data.days || [];
             return archiveDays;
           })
-      ).then(
-        (days) => {
-          box.innerHTML = days.length
-            ? '<ol class="archive-days">' +
-              days
-                .map(
-                  (d) =>
-                    '<li><button class="archive-day" data-action="archive-day" data-date="' +
-                    esc(d.date) +
-                    '"><strong>' +
-                    esc(d.date) +
-                    '</strong><span>' +
-                    (d.stats?.items ?? 0) +
-                    ' 条 · 付印 ' +
-                    stampTime.format(new Date(d.generatedAt)) +
-                    '</span></button></li>',
-                )
-                .join('') +
-              '</ol>'
-            : '<p class="dialog-empty">第一期还没付印；明早 08:05 后再来。</p>';
-        },
-      );
+      ).then((days) => {
+        box.innerHTML = days.length
+          ? '<ol class="archive-days">' +
+            days
+              .map(
+                (d) =>
+                  '<li><button class="archive-day" data-action="archive-day" data-date="' +
+                  esc(d.date) +
+                  '"><strong>' +
+                  esc(d.date) +
+                  '</strong><span>' +
+                  (d.stats?.items ?? 0) +
+                  ' 条 · 付印 ' +
+                  stampTime.format(new Date(d.generatedAt)) +
+                  '</span></button></li>',
+              )
+              .join('') +
+            '</ol>'
+          : '<p class="dialog-empty">第一期还没付印；明早 08:05 后再来。</p>';
+      });
   return attempt.catch(() => {
     box.textContent = '往期读取失败，稍后再试。';
   });
@@ -573,7 +577,10 @@ function loadStats() {
       box.innerHTML =
         '<h3>每日出刊</h3>' +
         (data.days.length
-          ? bars(data.days.map((d) => ({ label: d.date.slice(5), n: d.items })), dayMax)
+          ? bars(
+              data.days.map((d) => ({ label: d.date.slice(5), n: d.items })),
+              dayMax,
+            )
           : '<p class="dialog-empty">出刊记录将从第一轮完整采集后开始累积。</p>') +
         '<h3>分类分布</h3>' +
         (data.categories.length

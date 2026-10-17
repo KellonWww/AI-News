@@ -45,12 +45,56 @@
   </div>
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <h1 id="hero-title">少一点噪声，<br />多一点新知。</h1>
-      <p>AI 世界，值得关注的都在这里。<br />从开源灵感到下一代模型，每天发现一点新可能。</p>
+      <p class="hero-eyebrow">独立视角 · 开放信源</p>
+      <!-- avoid-ai-design-ignore: SD5 — signal. 是既有品牌字标，仅句点使用参考博客的主题强调色，不是标题关键词染色 -->
+      <h1 id="hero-title">
+        <span class="hero-wordmark">signal<span>.</span></span
+        ><span class="hero-subtitle">AI 世界的每日来信。</span>
+      </h1>
+      <p class="hero-description">
+        少一点噪声，多一点新知。<br />从开源灵感到下一代模型，捕捉值得留下的信号。
+      </p>
       <div class="hero-cta">
-        <a href="#discover" class="primary-button">开始探索</a>
-        <span class="hero-note">保持好奇，每日更新</span>
+        <a href="#discover" class="primary-button">开始阅读 {{icon:arrow}}</a
+        ><span class="hero-note">保持好奇，每日更新</span>
       </div>
+    </div>
+    <figure class="signal-art" aria-label="抽象信号天线插画">
+      <svg viewBox="0 0 480 440" fill="none" aria-hidden="true">
+        <defs>
+          <pattern id="signal-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="currentColor" opacity=".25" />
+          </pattern>
+        </defs>
+        <path d="M40 410V220a200 200 0 0 1 400 0v190Z" fill="var(--soft)" />
+        <path d="M40 410V220a200 200 0 0 1 400 0v190Z" fill="url(#signal-dots)" />
+        <circle cx="240" cy="188" r="150" stroke="var(--line-strong)" stroke-dasharray="3 8" />
+        <path d="M240 188 124 390h232L240 188Z" fill="var(--accent)" />
+        <path d="M240 188v202M178 296h124M148 348h184" stroke="var(--bg)" stroke-width="3" />
+        <path
+          d="M197 145a61 61 0 0 0 0 86M283 145a61 61 0 0 1 0 86"
+          stroke="var(--accent)"
+          stroke-width="17"
+          stroke-linecap="round"
+        />
+        <path
+          d="M158 106a116 116 0 0 0 0 164M322 106a116 116 0 0 1 0 164"
+          stroke="var(--accent)"
+          stroke-width="10"
+          stroke-linecap="round"
+        />
+        <circle cx="240" cy="188" r="15" fill="var(--text)" />
+        <circle cx="385" cy="104" r="22" fill="var(--text)" />
+        <path d="M70 390h340" stroke="var(--text)" stroke-width="2" />
+        <path d="M95 65v24M83 77h24" stroke="var(--accent)" stroke-width="2" />
+      </svg>
+      <figcaption><span>NO HYPE, JUST SIGNAL.</span><span>持续接收中 ↗</span></figcaption>
+    </figure>
+  </section>
+  <div id="health-notice" class="health-notice" hidden></div>
+  <section class="highlights" aria-label="本期精选">
+    <div id="featured" class="feature-card skeleton" aria-busy="true">
+      <span>正在整理值得一读的内容…</span>
     </div>
     <aside class="hero-paper" aria-label="今日要目">
       <p class="paper-mast">
@@ -66,95 +110,97 @@
       <p class="paper-foot" id="paper-foot">正在排版今日要目…</p>
     </aside>
   </section>
-  <div id="health-notice" class="health-notice" hidden></div>
-  <section class="highlights" aria-label="本期精选">
-    <div id="featured" class="feature-card skeleton" aria-busy="true">
-      <span>正在整理值得一读的内容…</span>
-    </div>
-    <aside class="trending-card">
-      <div class="section-kicker">
-        <span>{{icon:bolt}} 开源风向标</span><span class="small-label">按 stars 排序</span>
-      </div>
-      <div id="trending">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
-      </div>
-      <button class="text-link" data-action="projects">发现更多开源项目 {{icon:arrow}}</button>
-    </aside>
-  </section>
   <section id="discover" class="discover-section" aria-labelledby="discover-title">
-    <div class="discover-heading">
-      <div>
-        <!-- avoid-ai-design-ignore: SD5 — 句点是品牌 motif（signal.），与 logo、导航、页脚同一套系统 -->
-        <h2 id="discover-title">发现新鲜事<span class="heading-dot">.</span></h2>
+    <aside class="discover-index">
+      <p class="section-number">01 / THE READING ROOM</p>
+      <div class="discover-heading">
+        <div>
+          <!-- avoid-ai-design-ignore: SD5 — 句点是品牌 motif（signal.），与 logo、导航、页脚同一套系统 -->
+          <h2 id="discover-title">发现新鲜事<span class="heading-dot">.</span></h2>
+        </div>
+        <p class="index-description">大事、小事、新鲜事。<br />在快速变化里，找到你的关注。</p>
       </div>
-      <label class="search-box"
-        >{{icon:search}}<input
-          id="search"
-          type="search"
-          placeholder="搜索项目、模型、灵感…"
-          autocomplete="off"
-          aria-label="搜索资讯"
-        /><kbd>/</kbd></label
-      >
-    </div>
-    <div class="filter-bar">
-      <div id="categories" class="category-tabs" role="group" aria-label="资讯分类"></div>
-    </div>
-    <div class="topic-toolbar" role="group" aria-label="关注主题">
-      <span class="topic-caption">关注范围</span>
-      <button id="china-filter" class="topic-filter" data-action="china" aria-pressed="false">
-        中国 AI
-      </button>
-      <button id="active-tag" class="topic-filter" data-action="clear-tag" hidden></button>
-      <button id="follow-active-tag" class="text-link" data-action="follow-tag" hidden>
-        关注此标签
-      </button>
-      <button id="clear-filters" class="text-link" data-action="reset" hidden>清除筛选</button>
-      <span class="topic-hint">按品牌与内容重点探索，点击文章标签聚合阅读</span>
-    </div>
-    <div class="results-toolbar">
-      <p id="result-count" role="status" aria-live="polite">正在加载资讯…</p>
-      <div class="select-controls">
-        <label
-          ><span class="sr-only">时间范围</span
-          ><select id="time-filter">
-            <option value="0">全部时间</option>
-            <option value="1">最近 24 小时</option>
-            <option value="7">最近 7 天</option>
-            <option value="30">最近 30 天</option>
-          </select></label
-        ><span class="control-divider"></span
-        ><label
-          ><span class="sr-only">排序方式</span
-          ><select id="sort">
-            <option value="latest">最新动态</option>
-            <option value="hot">热度参考</option>
-            <option value="growth">涨星最快</option>
-          </select></label
+      <div class="filter-bar">
+        <div id="categories" class="category-tabs" role="group" aria-label="资讯分类"></div>
+      </div>
+      <aside class="trending-card">
+        <div class="section-kicker">
+          <span>{{icon:bolt}} 开源风向标</span><span class="small-label">按 stars 排序</span>
+        </div>
+        <div id="trending">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+        <button class="text-link" data-action="projects">发现更多开源项目 {{icon:arrow}}</button>
+      </aside>
+    </aside>
+    <div class="discover-content">
+      <div class="feed-search">
+        <label class="search-box"
+          >{{icon:search}}<input
+            id="search"
+            type="search"
+            placeholder="搜索项目、模型、灵感…"
+            autocomplete="off"
+            aria-label="搜索资讯"
+          /><kbd>/</kbd></label
         >
       </div>
-    </div>
-    <p class="sort-note" id="sort-note" hidden></p>
-    <div id="feed-grid" class="feed-grid" aria-busy="true">
-      <div class="news-card skeleton">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
+      <div class="topic-toolbar" role="group" aria-label="关注主题">
+        <span class="topic-caption">关注范围</span>
+        <button id="china-filter" class="topic-filter" data-action="china" aria-pressed="false">
+          中国 AI
+        </button>
+        <button id="active-tag" class="topic-filter" data-action="clear-tag" hidden></button>
+        <button id="follow-active-tag" class="text-link" data-action="follow-tag" hidden>
+          关注此标签
+        </button>
+        <button id="clear-filters" class="text-link" data-action="reset" hidden>清除筛选</button>
+        <span class="topic-hint">按品牌与内容重点探索，点击文章标签聚合阅读</span>
       </div>
-      <div class="news-card skeleton">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
+      <div class="results-toolbar">
+        <p id="result-count" role="status" aria-live="polite">正在加载资讯…</p>
+        <div class="select-controls">
+          <label
+            ><span class="sr-only">时间范围</span
+            ><select id="time-filter">
+              <option value="0">全部时间</option>
+              <option value="1">最近 24 小时</option>
+              <option value="7">最近 7 天</option>
+              <option value="30">最近 30 天</option>
+            </select></label
+          ><span class="control-divider"></span
+          ><label
+            ><span class="sr-only">排序方式</span
+            ><select id="sort">
+              <option value="latest">最新动态</option>
+              <option value="hot">热度参考</option>
+              <option value="growth">涨星最快</option>
+            </select></label
+          >
+        </div>
       </div>
-      <div class="news-card skeleton">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
+      <p class="sort-note" id="sort-note" hidden></p>
+      <div id="feed-grid" class="feed-grid" aria-busy="true">
+        <div class="news-card skeleton">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+        <div class="news-card skeleton">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
+        <div class="news-card skeleton">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+        </div>
       </div>
-    </div>
-    <div class="load-more-wrap">
-      <button id="load-more" class="secondary-button" data-action="more" hidden>
-        再看一些 {{icon:chevron}}</button
-      ><span id="end-note" class="end-note" hidden>你已经捕捉到这一期的全部信号。</span>
+      <div class="load-more-wrap">
+        <button id="load-more" class="secondary-button" data-action="more" hidden>
+          再看一些 {{icon:chevron}}</button
+        ><span id="end-note" class="end-note" hidden>你已经捕捉到这一期的全部信号。</span>
+      </div>
     </div>
   </section>
   <section class="closing-note">

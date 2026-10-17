@@ -18,8 +18,8 @@ export function initMotion() {
   };
   const resetPointer = () => {
     active?.classList.remove('pointer-active');
-    active?.style.removeProperty('--tilt-x');
-    active?.style.removeProperty('--tilt-y');
+    active?.style.removeProperty('--hero-x');
+    active?.style.removeProperty('--hero-y');
     active = null;
     pointer = null;
   };
@@ -36,10 +36,6 @@ export function initMotion() {
     const y = Math.min(1, Math.max(0, (pointer.y - rect.top) / rect.height));
     active.style.setProperty('--hero-x', (x - 0.5) * 15 + 'px');
     active.style.setProperty('--hero-y', (y - 0.5) * 15 + 'px');
-    active.style.setProperty('--spot-x', x * 100 + '%');
-    active.style.setProperty('--spot-y', y * 100 + '%');
-    active.style.setProperty('--tilt-x', (0.5 - y) * 3 + 'deg');
-    active.style.setProperty('--tilt-y', (x - 0.5) * 3 + 'deg');
     active.classList.add('pointer-active');
   };
   const schedule = () => {
@@ -82,14 +78,10 @@ export function initMotion() {
         const key = entry.target.querySelector<HTMLAnchorElement>('.card-title')?.href;
         if (key && revealed.has(key)) continue;
         if (key) revealed.add(key);
-        play(
-          entry.target,
-          [
-            { opacity: 0.5, translate: '0 18px' },
-            { opacity: 1, translate: '0 0' },
-          ],
-          { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' },
-        );
+        play(entry.target, [{ translate: '0 10px' }, { translate: '0 0' }], {
+          duration: 520,
+          easing: 'cubic-bezier(.2,.7,.2,1)',
+        });
       }
     },
     { threshold: 0.08 },
@@ -103,14 +95,10 @@ export function initMotion() {
   if (grid) new MutationObserver(watchCards).observe(grid, { childList: true });
   watchCards();
   if (hero)
-    play(
-      hero,
-      [
-        { opacity: 0.6, translate: '0 12px' },
-        { opacity: 1, translate: '0 0' },
-      ],
-      { duration: 650, easing: 'ease-out' },
-    );
+    play(hero, [{ translate: '0 8px' }, { opacity: 1, translate: '0 0' }], {
+      duration: 650,
+      easing: 'ease-out',
+    });
   document.addEventListener('click', (event) => {
     const button =
       event.target instanceof Element ? event.target.closest('button, .primary-button') : null;

@@ -170,9 +170,7 @@ export function filterItems(
       sort === 'hot'
         ? b.rankScore - a.rankScore || itemTime(b) - itemTime(a) || a.id.localeCompare(b.id)
         : sort === 'growth'
-          ? growthDelta(b) - growthDelta(a) ||
-            itemTime(b) - itemTime(a) ||
-            a.id.localeCompare(b.id)
+          ? growthDelta(b) - growthDelta(a) || itemTime(b) - itemTime(a) || a.id.localeCompare(b.id)
           : itemTime(b) - itemTime(a) || b.rankScore - a.rankScore || a.id.localeCompare(b.id),
     );
 }
