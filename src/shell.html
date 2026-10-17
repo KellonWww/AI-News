@@ -10,7 +10,6 @@
       <a href="#discover" class="nav-link active">发现</a
       ><button class="nav-link" data-action="saved" aria-pressed="false">
         我的收藏 <span id="saved-count">0</span></button
-      ><button class="nav-link" data-action="sources">关于与来源 {{icon:chevron}}</button
       ><!-- 云端版专属入口（静态快照模式保持隐藏） --><button
         class="nav-link"
         id="nav-archive"
@@ -49,13 +48,11 @@
     <span class="edition"
       ><span class="live-dot"></span> THE DAILY SIGNAL <span class="edition-slash">/</span>
       <span id="edition-date"></span></span
-    ><button data-action="sources" class="edition-status" id="edition-status">
-      正在连接今日灵感 {{icon:chevron}}
-    </button>
+    ><span class="edition-status" id="edition-status">正在连接今日灵感</span>
   </div>
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <p class="hero-eyebrow">独立视角 · 开放信源</p>
+      <p class="hero-eyebrow">独立视角 · 每日精选</p>
       <!-- avoid-ai-design-ignore: SD5 — signal. 是既有品牌字标，仅句点使用参考博客的主题强调色，不是标题关键词染色 -->
       <h1 id="hero-title">
         <span class="hero-wordmark">signal<span>.</span></span
@@ -217,59 +214,20 @@
     <span class="closing-icon">{{icon:globe}}</span>
     <div>
       <h3>好信息，不该有门槛。</h3>
-      <p>来自开放社区、官方信源与 AI 媒体。保留出处，直达原文，不制造噪声。</p>
+      <p>精选值得关注的 AI 动态与实用灵感，少一点噪声，多一点新知。</p>
     </div>
-    <button class="text-link" data-action="sources">了解我们的来源 {{icon:chevron}}</button>
   </section>
 </main>
 <footer class="site-footer">
   <div class="footer-inner">
     <a class="brand footer-brand" href="./"
       ><span class="brand-mark">{{logo}}</span><span>signal.</span></a
-    ><span>保持好奇，明天见。</span
-    ><button data-action="sources">免费公开来源，每日自动整理 {{icon:chevron}}</button>
+    ><span>保持好奇，明天见。</span><span>每日精选，持续更新</span>
   </div>
   <div class="footer-fine">
     <span id="updated-at">正在读取快照…</span><span>No hype, just signal.</span>
   </div>
 </footer>
-<dialog id="sources-dialog" aria-labelledby="sources-title">
-  <div class="dialog-heading">
-    <div>
-      <h2 id="sources-title">信息从哪里来？</h2>
-    </div>
-    <button class="icon-button" data-action="close-dialog" aria-label="关闭来源面板">
-      {{icon:close}}
-    </button>
-  </div>
-  <p class="dialog-intro">
-    只使用免费公开 API 与 RSS，不调用付费 AI 或翻译服务。标题与简介保留原文，所有内容都能追溯来源。
-  </p>
-  <div id="source-list"></div>
-  <div class="method-note">
-    <strong>如何理解这里的“热门”？</strong>
-    <p>
-      GitHub 按近期活跃仓库的累计 stars 排序；Hugging Face
-      按来源热门榜发现。模型更新不等于正式发布，项目上榜不构成安全背书。
-    </p>
-    <strong>标签与中国 AI 关注范围</strong>
-    <p>
-      标签由标题、简介与源站标签进行免费规则匹配，代表内容提及，不代表官方发布或项目归属。中国 AI
-      筛选包含已识别国内品牌的内容及已核验的国内官方开源组织；中文媒体中的海外报道不会自动归入。覆盖不保证完整。
-    </p>
-    <strong>每天更新，但不伪装实时。</strong>
-    <p>
-      云端版每小时滚动更新部分来源，北京时间次日 08:05 前轮完全部 12
-      源；免费调度可能延迟。单源失败保留旧快照，超过 36 小时提示过期。
-    </p>
-    <p>
-      收藏与关注标签需要登录 GitHub
-      账号并云端同步。外部项目的使用费用与安全性请在原站确认；本站免费采集不代表第三方产品永久免费。
-    </p>
-  </div>
-  <button class="secondary-button" data-action="reload">{{icon:refresh}} 重新加载网站快照</button>
-  <p class="reload-note">这不会触发远端采集；维护者可在 GitHub Actions 手动运行更新。</p>
-</dialog>
 <dialog id="archive-dialog" aria-labelledby="archive-title">
   <div class="dialog-heading">
     <div>

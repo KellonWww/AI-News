@@ -1,5 +1,24 @@
 /** Developer-owned interface copy only. Feed content and user input are never translated. */
 export const english: Record<string, string> = {
+  '热度参考为榜单名次的归一化排序，不代表真实热度或今日增长。':
+    'Popularity normalizes chart rankings. It does not measure overall popularity or daily growth.',
+  '涨星最快按近期 stars 增量排序，仅适用于开源项目；其余内容排在后面。':
+    'Star growth ranks open-source projects by recent star gains. Other content appears afterward.',
+  下载统计: 'Downloads',
+  点赞统计: 'Likes',
+  '暂时没有可用新闻，下方仍可发现更多精彩内容。':
+    'No news is available yet. Explore more content below.',
+  发现更多: 'Discover more',
+  '试试其他关键词或分类。': 'Try another keyword or category.',
+  内容等待更新: 'Awaiting an update',
+  今日内容已更新: 'Content updated',
+  '内容已超过 36 小时未更新，请留意发布时间。':
+    'Content has not been updated in over 36 hours. Please check publication dates.',
+  更新于: 'Updated at ',
+  '独立视角 · 每日精选': 'INDEPENDENT EYES / DAILY PICKS',
+  '精选值得关注的 AI 动态与实用灵感，少一点噪声，多一点新知。':
+    'Selected AI stories and practical inspiration. Less noise, more insight.',
+  '每日精选，持续更新': 'Daily picks. Regular updates.',
   日期未提供: 'Date unavailable',
   尚无成功记录: 'No successful sync yet',
   北京时间: 'Beijing time',

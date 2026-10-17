@@ -128,8 +128,8 @@ const metric = (i: Item) =>
       ' ' +
       (i.metricLabel === 'stars' ? 'stars' : i.metricLabel === 'downloads' ? 'downloads' : 'likes');
 const SORT_NOTES: Record<string, string> = {
-  hot: '热度参考为各来源榜单名次的归一化排序，不代表跨平台真实热度或今日增长。',
-  growth: '涨星最快按本轮采集相对上一轮的增量排序，仅 GitHub 项目来源参与；其余信号沉底。',
+  hot: '热度参考为榜单名次的归一化排序，不代表真实热度或今日增长。',
+  growth: '涨星最快按近期 stars 增量排序，仅适用于开源项目；其余内容排在后面。',
 };
 const logo =
   '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 20h7L21 7h5M6 26h7l8-13h5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -240,11 +240,7 @@ function card(item: Item) {
     esc(item.summary) +
     '</p><div class="card-tags">' +
     tagButtons(item) +
-    '</div><div class="card-bottom"><span class="source-name"><span class="source-dot source-' +
-    primary +
-    '"></span>' +
-    esc(item.sourceName) +
-    '</span><span title="' +
+    '</div><div class="card-bottom"><span title="' +
     esc(stamp(item.updatedAt || item.publishedAt)) +
     '">' +
     (item.updatedAt ? ui('更新 ') : item.publishedAt ? ui('发布 ') : '') +
@@ -261,8 +257,8 @@ function card(item: Item) {
         (item.metricLabel === 'stars'
           ? ui('累计关注')
           : item.metricLabel === 'downloads'
-            ? ui('源站下载统计')
-            : ui('源站点赞统计')) +
+            ? ui('下载统计')
+            : ui('点赞统计')) +
         '</span></div>'
       : '') +
     '</article>'
@@ -291,8 +287,6 @@ function renderPaper(featuredId?: string, excludeIds: string[] = []) {
       ) +
       esc(lead.title) +
       '</strong><span class="paper-meta">' +
-      esc(lead.sourceName) +
-      ' ' +
       dateText(lead.publishedAt) +
       '</span></a></li>' +
       rest
@@ -302,14 +296,11 @@ function renderPaper(featuredId?: string, excludeIds: string[] = []) {
             esc(i.url) +
             '" target="_blank" rel="noopener noreferrer"><span class="paper-item-title">' +
             esc(i.title) +
-            '</span><span class="paper-item-src">' +
-            esc(i.sourceName) +
             '</span></a></li>',
         )
         .join('')
     : ui('<li class="paper-empty">今日要目暂无可读内容。</li>');
-  get('#paper-foot').textContent =
-    feed.sources.length + ui(' 个公开来源，共 ') + feed.items.length + ui(' 条信号');
+  get('#paper-foot').textContent = feed.items.length + ui(' 条信号');
 }
 function renderHighlights() {
   if (!feed) return;
@@ -333,8 +324,6 @@ function renderHighlights() {
       '</p><div class="card-tags">' +
       tagButtons(featured) +
       '</div><div class="feature-bottom"><span>' +
-      esc(featured.sourceName) +
-      '<span class="feature-separator">/</span>' +
       dateText(featured.publishedAt) +
       '</span><a href="' +
       esc(featured.url) +
@@ -348,10 +337,10 @@ function renderHighlights() {
   } else {
     feature.innerHTML =
       ui(
-        '<span class="feature-eyebrow">本期值得一读</span><h2>好内容，值得等一等。</h2><p>新闻来源暂时没有可用内容。下方仍可发现已成功采集的项目，或查看来源状态。</p><button class="feature-read" data-action="sources">查看来源状态 ',
+        '<span class="feature-eyebrow">本期值得一读</span><h2>好内容，值得等一等。</h2><p>暂时没有可用新闻，下方仍可发现更多精彩内容。</p><a class="feature-read" href="#discover">发现更多 ',
       ) +
       icon('arrow') +
-      '</button>';
+      '</a>';
   }
   const trending = feed.items
     .filter((i) => i.sourceId === 'github-projects')
@@ -429,7 +418,7 @@ function renderResults() {
       '</h3><p>' +
       (savedOnly
         ? ui('点击卡片右上角的书签，把感兴趣的内容留给以后。')
-        : ui('试试其他关键词或分类；部分来源可能暂未同步。')) +
+        : ui('试试其他关键词或分类。')) +
       ui(
         '</p><button class="secondary-button" data-action="reset">清除筛选，查看全部</button></div>',
       );
@@ -438,53 +427,15 @@ function renderResults() {
 }
 function renderHealth() {
   if (!feed) return;
-  const failed = feed.sources.filter((s) => s.status === 'error');
   const stale = Date.now() - Date.parse(feed.generatedAt) > 36 * 3600000;
-  const oldSources = feed.sources.filter(
-    (s) => s.lastSuccessAt && Date.now() - Date.parse(s.lastSuccessAt) > 36 * 3600000,
-  );
-  get('#edition-status').innerHTML =
-    (stale
-      ? ui('快照等待更新')
-      : feed.sources.length - failed.length + ' / ' + feed.sources.length + ui(' 来源已同步')) +
-    icon('chevron');
+  get('#edition-status').textContent = stale ? ui('内容等待更新') : ui('今日内容已更新');
   const notice = get('#health-notice');
-  notice.hidden = !failed.length && !stale && !oldSources.length;
+  notice.hidden = !stale;
   notice.innerHTML =
-    icon('info') +
-    '<span>' +
-    (stale
-      ? ui('当前快照已超过 36 小时未更新，请留意来源时间。')
-      : failed.length
-        ? ui('部分信号暂时离线：') + failed.length + ui(' 个来源本轮未同步，已保留可用快照。')
-        : ui('部分来源的数据已超过 36 小时未更新。')) +
-    ui('</span><button data-action="sources">查看状态 ') +
-    icon('chevron') +
-    '</button>';
-  get('#updated-at').textContent = ui('快照生成于 ') + stamp(feed.generatedAt);
-  get('#source-list').innerHTML = feed.sources
-    .map(
-      (s) =>
-        '<div class="source-row"><span class="source-avatar">' +
-        icon(s.id.includes('github') ? 'code' : 'cube') +
-        '</span><div class="source-detail"><a href="' +
-        esc(s.homepage) +
-        '" target="_blank" rel="noopener noreferrer">' +
-        esc(s.name) +
-        ' ' +
-        icon('arrow') +
-        ui('</a><span>最近成功：') +
-        esc(stamp(s.lastSuccessAt)) +
-        '</span>' +
-        (s.error ? '<span class="source-error">' + esc(s.error) + '</span>' : '') +
-        '</div><span class="source-status ' +
-        (s.status === 'ok' ? 'success' : 'error') +
-        '">' +
-        (s.status === 'ok' ? s.itemCount + ui(' 条已同步') : ui('暂未同步')) +
-        '</span></div>',
-    )
-    .join('');
+    icon('info') + '<span>' + ui('内容已超过 36 小时未更新，请留意发布时间。') + '</span>';
+  get('#updated-at').textContent = ui('更新于 ') + stamp(feed.generatedAt);
 }
+
 interface ArchiveDay {
   date: string;
   generatedAt: string;
@@ -529,9 +480,7 @@ function loadArchive(date?: string) {
                     esc(l.url) +
                     '" target="_blank" rel="noopener noreferrer">' +
                     esc(l.title) +
-                    '<span class="paper-item-src">' +
-                    esc(l.sourceName) +
-                    '</span></a></li>',
+                    '</a></li>',
                 )
                 .join('') +
               '</ol>'
@@ -591,7 +540,6 @@ function loadStats() {
       box.dataset.loaded = '1';
       const dayMax = Math.max(1, ...data.days.map((d) => d.items));
       const catMax = Math.max(1, ...data.categories.map((c) => c.n));
-      const okSources = data.sources.filter((s) => s.status === 'ok').length;
       box.innerHTML =
         ui('<h3>每日出刊</h3>') +
         (data.days.length
@@ -615,12 +563,7 @@ function loadStats() {
           ? '<p class="stat-tags">' +
             data.tags.map((t) => esc(t.tag) + ' <span>' + t.n + '</span>').join(' · ') +
             '</p>'
-          : ui('<p class="dialog-empty">暂无标签数据。</p>')) +
-        '<p class="stat-sources">' +
-        okSources +
-        ' / ' +
-        data.sources.length +
-        ui(' 个来源当前在线</p>');
+          : ui('<p class="dialog-empty">暂无标签数据。</p>'));
     })
     .catch(() => {
       box.textContent = ui('统计读取失败，稍后再试。');
@@ -643,7 +586,6 @@ function renderLoadError() {
   get('#trending').innerHTML = ui('<p class="empty-trending">等待数据加载。</p>');
   get('#paper-list').innerHTML = ui('<li class="paper-empty">要目暂未送达，请重新加载。</li>');
   get('#paper-foot').textContent = '';
-  get('#source-list').textContent = ui('无法读取来源状态，请重新加载。');
   get('#updated-at').textContent = ui('尚未读取到可用快照');
 }
 async function load() {
@@ -739,9 +681,6 @@ document.addEventListener('click', (event) => {
       if (!writeStorage('signal-theme', document.documentElement.dataset.theme))
         toast(ui('主题已切换；当前浏览器无法保存偏好。'));
       syncTheme();
-      break;
-    case 'sources':
-      get<HTMLDialogElement>('#sources-dialog').showModal();
       break;
     case 'archive':
       archiveDays = null; // every open re-reads, so today's edition shows up
