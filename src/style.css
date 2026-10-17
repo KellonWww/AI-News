@@ -895,6 +895,8 @@ kbd {
   transform: translate(-50%, 0);
 }
 dialog {
+  /* Restore native centering overridden by the global margin reset. */
+  margin: auto;
   width: min(640px, calc(100% - 30px));
   max-height: 85dvh;
   overflow: auto;
