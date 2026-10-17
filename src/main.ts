@@ -1,3 +1,4 @@
+import { bindShellLanguage, currentLanguage, locale, toggleLanguage, ui } from './i18n';
 import { initAccount } from './account';
 import './style.css';
 import './motion.css';
@@ -95,12 +96,12 @@ let savedOnly = false;
 let limit = 12;
 let loading = false;
 let toastTimeout: ReturnType<typeof setTimeout> | undefined;
-const dateFormat = new Intl.DateTimeFormat('zh-CN', {
+let dateFormat = new Intl.DateTimeFormat(locale(), {
   timeZone: 'Asia/Shanghai',
   month: '2-digit',
   day: '2-digit',
 });
-const fullDate = new Intl.DateTimeFormat('zh-CN', {
+let fullDate = new Intl.DateTimeFormat(locale(), {
   timeZone: 'Asia/Shanghai',
   year: 'numeric',
   month: '2-digit',
@@ -110,15 +111,16 @@ const fullDate = new Intl.DateTimeFormat('zh-CN', {
   hour12: false,
 });
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
-const stampTime = new Intl.DateTimeFormat('zh-CN', {
+let stampTime = new Intl.DateTimeFormat(locale(), {
   timeZone: 'Asia/Shanghai',
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
 });
-const dateText = (date: string | null) => (date ? dateFormat.format(new Date(date)) : '日期未提供');
+const dateText = (date: string | null) =>
+  date ? dateFormat.format(new Date(date)) : ui('日期未提供');
 const stamp = (date: string | null) =>
-  date ? fullDate.format(new Date(date)) + ' 北京时间' : '尚无成功记录';
+  date ? fullDate.format(new Date(date)) + ui(' 北京时间') : ui('尚无成功记录');
 const metric = (i: Item) =>
   i.metricValue === null
     ? ''
@@ -134,16 +136,20 @@ const logo =
 get('#app').innerHTML = shell
   .replaceAll('{{logo}}', logo)
   .replace(/\{\{icon:(\w+)\}\}/g, (_, name: IconName) => icon(name));
-get('#edition-date').textContent = new Intl.DateTimeFormat('zh-CN', {
-  timeZone: 'Asia/Shanghai',
-  month: 'long',
-  day: 'numeric',
-  weekday: 'long',
-}).format(new Date());
+bindShellLanguage(document.body);
+function renderEditionDate() {
+  get('#edition-date').textContent = new Intl.DateTimeFormat(locale(), {
+    timeZone: 'Asia/Shanghai',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date());
+}
+renderEditionDate();
 function syncTheme() {
   const dark = document.documentElement.dataset.theme === 'dark';
   get('#theme-toggle').innerHTML = icon(dark ? 'sun' : 'moon');
-  get('#theme-toggle').setAttribute('aria-label', dark ? '切换浅色模式' : '切换深色模式');
+  get('#theme-toggle').setAttribute('aria-label', dark ? ui('切换浅色模式') : ui('切换深色模式'));
   document
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute('content', dark ? '#142126' : '#f0ecdf');
@@ -162,7 +168,7 @@ function syncSaved() {
   });
 }
 function renderTabs() {
-  get('#categories').innerHTML = [['all', '全部'], ...Object.entries(labels)]
+  get('#categories').innerHTML = [['all', '全部'] as const, ...Object.entries(labels)]
     .map(
       ([key, label]) =>
         '<button class="category-tab ' +
@@ -173,7 +179,7 @@ function renderTabs() {
         (category === key) +
         '">' +
         (key === 'all' ? '' : icon(categoryIcons[key as Category])) +
-        label +
+        ui(label) +
         '</button>',
     )
     .join('');
@@ -188,7 +194,7 @@ function saveButton(item: Item) {
     '" aria-pressed="' +
     active +
     '" aria-label="' +
-    (active ? '取消收藏：' : '收藏：') +
+    (active ? ui('取消收藏：') : ui('收藏：')) +
     esc(item.title) +
     '">' +
     icon('bookmark') +
@@ -204,7 +210,7 @@ function tagButtons(item: Item) {
         esc(t) +
         '" aria-pressed="' +
         (tag === t) +
-        '" title="筛选标签：' +
+        ui('" title="筛选标签：') +
         esc(t) +
         '">' +
         esc(t) +
@@ -221,7 +227,7 @@ function card(item: Item) {
     primary +
     '">' +
     icon(categoryIcons[primary]) +
-    labels[primary] +
+    ui(labels[primary]) +
     '</span>' +
     saveButton(item) +
     '</div><a class="card-title" href="' +
@@ -241,7 +247,7 @@ function card(item: Item) {
     '</span><span title="' +
     esc(stamp(item.updatedAt || item.publishedAt)) +
     '">' +
-    (item.updatedAt ? '更新 ' : item.publishedAt ? '发布 ' : '') +
+    (item.updatedAt ? ui('更新 ') : item.publishedAt ? ui('发布 ') : '') +
     dateText(item.updatedAt || item.publishedAt) +
     '</span></div>' +
     (item.metricValue !== null
@@ -253,10 +259,10 @@ function card(item: Item) {
           : '') +
         '<span>' +
         (item.metricLabel === 'stars'
-          ? '累计关注'
+          ? ui('累计关注')
           : item.metricLabel === 'downloads'
-            ? '源站下载统计'
-            : '源站点赞统计') +
+            ? ui('源站下载统计')
+            : ui('源站点赞统计')) +
         '</span></div>'
       : '') +
     '</article>'
@@ -265,7 +271,7 @@ function card(item: Item) {
 function renderPaper(featuredId?: string, excludeIds: string[] = []) {
   if (!feed) return;
   get('#paper-stamp').textContent = feed.generatedAt
-    ? '付印 ' + stampTime.format(new Date(feed.generatedAt))
+    ? ui('付印 ') + stampTime.format(new Date(feed.generatedAt))
     : '';
   // textContent keeps AI-written copy inert; static snapshots simply stay hidden
   const note = get('#editor-note');
@@ -280,7 +286,9 @@ function renderPaper(featuredId?: string, excludeIds: string[] = []) {
   get('#paper-list').innerHTML = lead
     ? '<li class="paper-lead"><a href="' +
       esc(lead.url) +
-      '" target="_blank" rel="noopener noreferrer"><span class="paper-flag">头条</span><strong>' +
+      ui(
+        '" target="_blank" rel="noopener noreferrer"><span class="paper-flag">头条</span><strong>',
+      ) +
       esc(lead.title) +
       '</strong><span class="paper-meta">' +
       esc(lead.sourceName) +
@@ -299,9 +307,9 @@ function renderPaper(featuredId?: string, excludeIds: string[] = []) {
             '</span></a></li>',
         )
         .join('')
-    : '<li class="paper-empty">今日要目暂无可读内容。</li>';
+    : ui('<li class="paper-empty">今日要目暂无可读内容。</li>');
   get('#paper-foot').textContent =
-    feed.sources.length + ' 个公开来源，共 ' + feed.items.length + ' 条信号';
+    feed.sources.length + ui(' 个公开来源，共 ') + feed.items.length + ui(' 条信号');
 }
 function renderHighlights() {
   if (!feed) return;
@@ -312,7 +320,9 @@ function renderHighlights() {
   feature.setAttribute('aria-busy', 'false');
   if (featured) {
     feature.innerHTML =
-      '<div class="feature-top"><span class="feature-eyebrow"><span class="live-dot"></span> 本期值得一读</span>' +
+      ui(
+        '<div class="feature-top"><span class="feature-eyebrow"><span class="live-dot"></span> 本期值得一读</span>',
+      ) +
       saveButton(featured) +
       '</div><a class="feature-title" href="' +
       esc(featured.url) +
@@ -328,14 +338,18 @@ function renderHighlights() {
       dateText(featured.publishedAt) +
       '</span><a href="' +
       esc(featured.url) +
-      '" target="_blank" rel="noopener noreferrer" class="feature-read" aria-label="阅读原文：' +
+      ui(
+        '" target="_blank" rel="noopener noreferrer" class="feature-read" aria-label="阅读原文：',
+      ) +
       esc(featured.title) +
-      '">阅读原文 ' +
+      ui('">阅读原文 ') +
       icon('arrow') +
       '</a></div>';
   } else {
     feature.innerHTML =
-      '<span class="feature-eyebrow">本期值得一读</span><h2>好内容，值得等一等。</h2><p>新闻来源暂时没有可用内容。下方仍可发现已成功采集的项目，或查看来源状态。</p><button class="feature-read" data-action="sources">查看来源状态 ' +
+      ui(
+        '<span class="feature-eyebrow">本期值得一读</span><h2>好内容，值得等一等。</h2><p>新闻来源暂时没有可用内容。下方仍可发现已成功采集的项目，或查看来源状态。</p><button class="feature-read" data-action="sources">查看来源状态 ',
+      ) +
       icon('arrow') +
       '</button>';
   }
@@ -361,7 +375,7 @@ function renderHighlights() {
             '</span></a>',
         )
         .join('')
-    : '<p class="empty-trending">开源榜暂未同步，稍后再来看看。</p>';
+    : ui('<p class="empty-trending">开源榜暂未同步，稍后再来看看。</p>');
   renderPaper(
     featured?.id,
     trending.map((i) => i.id),
@@ -373,7 +387,7 @@ function renderResults() {
   syncSaved();
   get('#china-filter').setAttribute('aria-pressed', String(chinaOnly));
   get('#active-tag').hidden = !tag;
-  get('#active-tag').textContent = tag ? '标签：' + tag + ' ×' : '';
+  get('#active-tag').textContent = tag ? ui('标签：') + tag + ' ×' : '';
   get('#clear-filters').hidden = !(
     tag ||
     chinaOnly ||
@@ -383,7 +397,7 @@ function renderResults() {
     savedOnly
   );
   get('#sort-note').hidden = !SORT_NOTES[sort];
-  get('#sort-note').textContent = SORT_NOTES[sort] || '';
+  get('#sort-note').textContent = ui(SORT_NOTES[sort] || '');
   if (!feed) return;
   const filtered = filterItems(feed.items, {
     query,
@@ -396,14 +410,14 @@ function renderResults() {
     saved,
   }) as Item[];
   get('#discover-title').innerHTML =
-    (savedOnly ? '我的收藏' : '发现新鲜事') + '<span class="heading-dot">.</span>';
+    (savedOnly ? ui('我的收藏') : ui('发现新鲜事')) + '<span class="heading-dot">.</span>';
   get('#result-count').textContent =
-    (savedOnly ? '收藏，' : '') +
+    (savedOnly ? ui('收藏，') : '') +
     filtered.length +
-    ' 条值得探索的信号' +
-    (query ? '，搜索「' + query + '」' : '') +
-    (chinaOnly ? '，中国 AI 相关' : '') +
-    (tag ? '，' + tag : '');
+    ui(' 条值得探索的信号') +
+    (query ? ui('，搜索「') + query + (currentLanguage() === 'en' ? '”' : '」') : '') +
+    (chinaOnly ? ui('，中国 AI 相关') : '') +
+    (tag ? (currentLanguage() === 'en' ? ' / ' : '，') + tag : '');
   const grid = get('#feed-grid');
   grid.setAttribute('aria-busy', 'false');
   grid.innerHTML = filtered.length
@@ -411,12 +425,14 @@ function renderResults() {
     : '<div class="empty-state">' +
       icon(savedOnly ? 'bookmark' : 'search') +
       '<h3>' +
-      (savedOnly ? '还没有符合条件的收藏' : '暂时没有找到这条信号') +
+      (savedOnly ? ui('还没有符合条件的收藏') : ui('暂时没有找到这条信号')) +
       '</h3><p>' +
       (savedOnly
-        ? '点击卡片右上角的书签，把感兴趣的内容留给以后。'
-        : '试试其他关键词或分类；部分来源可能暂未同步。') +
-      '</p><button class="secondary-button" data-action="reset">清除筛选，查看全部</button></div>';
+        ? ui('点击卡片右上角的书签，把感兴趣的内容留给以后。')
+        : ui('试试其他关键词或分类；部分来源可能暂未同步。')) +
+      ui(
+        '</p><button class="secondary-button" data-action="reset">清除筛选，查看全部</button></div>',
+      );
   get('#load-more').hidden = filtered.length <= limit;
   get('#end-note').hidden = filtered.length === 0 || filtered.length > limit;
 }
@@ -429,8 +445,8 @@ function renderHealth() {
   );
   get('#edition-status').innerHTML =
     (stale
-      ? '快照等待更新'
-      : feed.sources.length - failed.length + ' / ' + feed.sources.length + ' 来源已同步') +
+      ? ui('快照等待更新')
+      : feed.sources.length - failed.length + ' / ' + feed.sources.length + ui(' 来源已同步')) +
     icon('chevron');
   const notice = get('#health-notice');
   notice.hidden = !failed.length && !stale && !oldSources.length;
@@ -438,14 +454,14 @@ function renderHealth() {
     icon('info') +
     '<span>' +
     (stale
-      ? '当前快照已超过 36 小时未更新，请留意来源时间。'
+      ? ui('当前快照已超过 36 小时未更新，请留意来源时间。')
       : failed.length
-        ? '部分信号暂时离线：' + failed.length + ' 个来源本轮未同步，已保留可用快照。'
-        : '部分来源的数据已超过 36 小时未更新。') +
-    '</span><button data-action="sources">查看状态 ' +
+        ? ui('部分信号暂时离线：') + failed.length + ui(' 个来源本轮未同步，已保留可用快照。')
+        : ui('部分来源的数据已超过 36 小时未更新。')) +
+    ui('</span><button data-action="sources">查看状态 ') +
     icon('chevron') +
     '</button>';
-  get('#updated-at').textContent = '快照生成于 ' + stamp(feed.generatedAt);
+  get('#updated-at').textContent = ui('快照生成于 ') + stamp(feed.generatedAt);
   get('#source-list').innerHTML = feed.sources
     .map(
       (s) =>
@@ -457,14 +473,14 @@ function renderHealth() {
         esc(s.name) +
         ' ' +
         icon('arrow') +
-        '</a><span>最近成功：' +
+        ui('</a><span>最近成功：') +
         esc(stamp(s.lastSuccessAt)) +
         '</span>' +
         (s.error ? '<span class="source-error">' + esc(s.error) + '</span>' : '') +
         '</div><span class="source-status ' +
         (s.status === 'ok' ? 'success' : 'error') +
         '">' +
-        (s.status === 'ok' ? s.itemCount + ' 条已同步' : '暂未同步') +
+        (s.status === 'ok' ? s.itemCount + ui(' 条已同步') : ui('暂未同步')) +
         '</span></div>',
     )
     .join('');
@@ -485,23 +501,25 @@ interface StatsPayload {
   sources: { status: string }[];
 }
 let archiveDays: ArchiveDay[] | null = null;
+let archiveDate: string | undefined;
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: 'no-cache', signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error('HTTP ' + response.status);
   return (await response.json()) as T;
 }
 function loadArchive(date?: string) {
+  archiveDate = date;
   const box = get('#archive-list');
   const attempt = date
     ? fetchJson<ArchiveEdition>('/api/archive?date=' + encodeURIComponent(date)).then((edition) => {
         const lead = edition.lead || [];
         box.innerHTML =
-          '<button class="text-link" data-action="archive">返回往期列表</button>' +
+          ui('<button class="text-link" data-action="archive">返回往期列表</button>') +
           '<p class="archive-date">' +
           esc(date) +
           ' · ' +
           (edition.stats?.items ?? 0) +
-          ' 条信号</p>' +
+          ui(' 条信号</p>') +
           (lead.length
             ? '<ol class="archive-lead">' +
               lead
@@ -517,7 +535,7 @@ function loadArchive(date?: string) {
                 )
                 .join('') +
               '</ol>'
-            : '<p class="dialog-empty">这一期没有留下要目。</p>');
+            : ui('<p class="dialog-empty">这一期没有留下要目。</p>'));
       })
     : (archiveDays
         ? Promise.resolve(archiveDays)
@@ -537,22 +555,22 @@ function loadArchive(date?: string) {
                   esc(d.date) +
                   '</strong><span>' +
                   (d.stats?.items ?? 0) +
-                  ' 条 · 付印 ' +
+                  ui(' 条 · 付印 ') +
                   stampTime.format(new Date(d.generatedAt)) +
                   '</span></button></li>',
               )
               .join('') +
             '</ol>'
-          : '<p class="dialog-empty">第一期还没付印；明早 08:05 后再来。</p>';
+          : ui('<p class="dialog-empty">第一期还没付印；明早 08:05 后再来。</p>');
       });
   return attempt.catch(() => {
-    box.textContent = '往期读取失败，稍后再试。';
+    box.textContent = ui('往期读取失败，稍后再试。');
   });
 }
 function loadStats() {
   const box = get('#stats-list');
   if (box.dataset.loaded) return Promise.resolve();
-  box.textContent = '正在合算…';
+  box.textContent = ui('正在合算…');
   const bars = (rows: { label: string; n: number }[], max: number) =>
     '<ol class="stat-bars">' +
     rows
@@ -575,38 +593,58 @@ function loadStats() {
       const catMax = Math.max(1, ...data.categories.map((c) => c.n));
       const okSources = data.sources.filter((s) => s.status === 'ok').length;
       box.innerHTML =
-        '<h3>每日出刊</h3>' +
+        ui('<h3>每日出刊</h3>') +
         (data.days.length
           ? bars(
               data.days.map((d) => ({ label: d.date.slice(5), n: d.items })),
               dayMax,
             )
-          : '<p class="dialog-empty">出刊记录将从第一轮完整采集后开始累积。</p>') +
-        '<h3>分类分布</h3>' +
+          : ui('<p class="dialog-empty">出刊记录将从第一轮完整采集后开始累积。</p>')) +
+        ui('<h3>分类分布</h3>') +
         (data.categories.length
           ? bars(
               data.categories.map((c) => ({
-                label: labels[c.category as Category] || c.category,
+                label: ui(labels[c.category as Category] || c.category),
                 n: c.n,
               })),
               catMax,
             )
-          : '<p class="dialog-empty">暂无分类数据。</p>') +
-        '<h3>高频标签</h3>' +
+          : ui('<p class="dialog-empty">暂无分类数据。</p>')) +
+        ui('<h3>高频标签</h3>') +
         (data.tags.length
           ? '<p class="stat-tags">' +
             data.tags.map((t) => esc(t.tag) + ' <span>' + t.n + '</span>').join(' · ') +
             '</p>'
-          : '<p class="dialog-empty">暂无标签数据。</p>') +
+          : ui('<p class="dialog-empty">暂无标签数据。</p>')) +
         '<p class="stat-sources">' +
         okSources +
         ' / ' +
         data.sources.length +
-        ' 个来源当前在线</p>';
+        ui(' 个来源当前在线</p>');
     })
     .catch(() => {
-      box.textContent = '统计读取失败，稍后再试。';
+      box.textContent = ui('统计读取失败，稍后再试。');
     });
+}
+let loadFailed = false;
+function renderLoadError() {
+  get('#feed-grid').setAttribute('aria-busy', 'false');
+  get('#feed-grid').innerHTML =
+    '<div class="empty-state">' +
+    icon('globe') +
+    ui(
+      '<h3>信号暂时没有抵达</h3><p>网站数据加载失败，请检查网络后重试。</p><button class="secondary-button" data-action="reload">重新加载</button></div>',
+    );
+  get('#result-count').textContent = ui('暂时无法读取数据');
+  get('#edition-status').textContent = ui('数据加载失败');
+  get('#featured').classList.remove('skeleton');
+  get('#featured').setAttribute('aria-busy', 'false');
+  get('#featured').innerHTML = ui('<h2>稍等，好内容正在路上。</h2><p>请重新加载网站快照。</p>');
+  get('#trending').innerHTML = ui('<p class="empty-trending">等待数据加载。</p>');
+  get('#paper-list').innerHTML = ui('<li class="paper-empty">要目暂未送达，请重新加载。</li>');
+  get('#paper-foot').textContent = '';
+  get('#source-list').textContent = ui('无法读取来源状态，请重新加载。');
+  get('#updated-at').textContent = ui('尚未读取到可用快照');
 }
 async function load() {
   if (loading) return;
@@ -623,6 +661,7 @@ async function load() {
     );
     if (!response.ok) throw new Error('HTTP ' + response.status);
     feed = validateFeed(await response.json());
+    loadFailed = false;
     if (cloud) {
       // 往期/统计依赖云端 API，静态快照模式保持隐藏
       get('#nav-archive').hidden = false;
@@ -633,23 +672,10 @@ async function load() {
     renderResults();
   } catch (error) {
     if (feed) {
-      toast('重新加载失败，保留当前快照。');
+      toast(ui('重新加载失败，保留当前快照。'));
     } else {
-      get('#feed-grid').setAttribute('aria-busy', 'false');
-      get('#feed-grid').innerHTML =
-        '<div class="empty-state">' +
-        icon('globe') +
-        '<h3>信号暂时没有抵达</h3><p>网站数据加载失败，请检查网络后重试。</p><button class="secondary-button" data-action="reload">重新加载</button></div>';
-      get('#result-count').textContent = '暂时无法读取数据';
-      get('#edition-status').textContent = '数据加载失败';
-      get('#featured').classList.remove('skeleton');
-      get('#featured').setAttribute('aria-busy', 'false');
-      get('#featured').innerHTML = '<h2>稍等，好内容正在路上。</h2><p>请重新加载网站快照。</p>';
-      get('#trending').innerHTML = '<p class="empty-trending">等待数据加载。</p>';
-      get('#paper-list').innerHTML = '<li class="paper-empty">要目暂未送达，请重新加载。</li>';
-      get('#paper-foot').textContent = '';
-      get('#source-list').textContent = '无法读取来源状态，请重新加载。';
-      get('#updated-at').textContent = '尚未读取到可用快照';
+      loadFailed = true;
+      renderLoadError();
     }
     console.error('Feed load failed', error);
   } finally {
@@ -683,6 +709,9 @@ document.addEventListener('click', (event) => {
       : null;
   if (!target) return;
   switch (target.dataset.action) {
+    case 'language':
+      if (!toggleLanguage()) toast(ui('语言已切换；当前浏览器无法保存偏好。'));
+      break;
     case 'follow-tag':
       account.follow(tag);
       break;
@@ -708,7 +737,7 @@ document.addEventListener('click', (event) => {
       document.documentElement.dataset.theme =
         document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
       if (!writeStorage('signal-theme', document.documentElement.dataset.theme))
-        toast('主题已切换；当前浏览器无法保存偏好。');
+        toast(ui('主题已切换；当前浏览器无法保存偏好。'));
       syncTheme();
       break;
     case 'sources':
@@ -743,7 +772,7 @@ document.addEventListener('click', (event) => {
       break;
     }
     case 'saved':
-      if (account.requireAuth('登录后才能查看收藏。')) break;
+      if (account.requireAuth(ui('登录后才能查看收藏。'))) break;
       savedOnly = !savedOnly;
       limit = 12;
       renderResults();
@@ -775,9 +804,9 @@ document.addEventListener('click', (event) => {
       toast(
         persisted
           ? saved.has(id)
-            ? '已收藏，留给有空的自己。'
-            : '已取消收藏。'
-          : '已更新；当前浏览器无法持久保存收藏。',
+            ? ui('已收藏，留给有空的自己。')
+            : ui('已取消收藏。')
+          : ui('已更新；当前浏览器无法持久保存收藏。'),
       );
       break;
     }
@@ -864,5 +893,38 @@ const account = initAccount({
     scrollToDiscover();
   },
   toast,
+});
+document.addEventListener('signal:language', () => {
+  dateFormat = new Intl.DateTimeFormat(locale(), {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  fullDate = new Intl.DateTimeFormat(locale(), {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  stampTime = new Intl.DateTimeFormat(locale(), {
+    timeZone: 'Asia/Shanghai',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  renderEditionDate();
+  syncTheme();
+  renderResults();
+  if (feed) {
+    renderHealth();
+    renderHighlights();
+  } else if (loadFailed) renderLoadError();
+  get('#toast').classList.remove('visible');
+  delete get('#stats-list').dataset.loaded;
+  if (get<HTMLDialogElement>('#stats-dialog').open) void loadStats();
+  if (get<HTMLDialogElement>('#archive-dialog').open) void loadArchive(archiveDate);
 });
 void load();

@@ -158,6 +158,12 @@ select:focus-visible {
   font-size: 11px;
   color: var(--muted);
 }
+.language-toggle {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
 .header-actions {
   display: flex;
   gap: 12px;

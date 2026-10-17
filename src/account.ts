@@ -1,3 +1,4 @@
+import { ui } from './i18n';
 import './account.css';
 import { escapeHtml as esc } from './data.mjs';
 type User = { id: string; login: string; displayName: string };
@@ -25,36 +26,47 @@ export function initAccount(hooks: Hooks) {
   const content = element<HTMLDivElement>('account-content');
   const status = element<HTMLParagraphElement>('account-status');
   function render() {
-    button.textContent = state.user ? state.user.displayName : '我的账户';
+    button.textContent = state.user ? state.user.displayName : ui('我的账户');
     button.setAttribute(
       'aria-label',
-      state.user ? '打开我的账户：' + state.user.displayName : '打开我的账户',
+      state.user ? ui('打开我的账户：') + state.user.displayName : ui('打开我的账户'),
     );
     element('account-caption').textContent = state.user
-      ? '你的阅读偏好，随你同行。'
-      : '让值得留下的发现，不止留在这台设备。';
+      ? ui('你的阅读偏好，随你同行。')
+      : ui('让值得留下的发现，不止留在这台设备。');
     if (checking) {
-      content.innerHTML = '<p class="account-note">正在检查登录状态…</p>';
+      content.innerHTML = ui('<p class="account-note">正在检查登录状态…</p>');
       return;
     }
     if (failed) {
-      content.innerHTML =
-        '<p class="account-note">暂时无法确认账号状态。为避免混淆本地和云端收藏，恢复连接后再操作。</p><button class="secondary-button" data-account="retry">重新连接</button>';
+      content.innerHTML = ui(
+        '<p class="account-note">暂时无法确认账号状态。为避免混淆本地和云端收藏，恢复连接后再操作。</p><button class="secondary-button" data-account="retry">重新连接</button>',
+      );
       return;
     }
     if (!state.user) {
       content.innerHTML =
-        '<div class="account-welcome"><span class="account-symbol" aria-hidden="true">S.</span><h3>为好奇心留一个位置</h3><p>云端收藏、关注标签、跨设备同步</p></div>' +
+        ui(
+          '<div class="account-welcome"><span class="account-symbol" aria-hidden="true">S.</span><h3>为好奇心留一个位置</h3><p>云端收藏、关注标签、跨设备同步</p></div>',
+        ) +
         (state.available
-          ? '<a class="primary-button account-login" href="/api/auth/github">使用 GitHub 登录</a><p class="account-note">仅使用 GitHub 公开身份，不申请仓库或邮箱权限。登录即创建本站账户。</p>'
+          ? ui(
+              '<a class="primary-button account-login" href="/api/auth/github">使用 GitHub 登录</a><p class="account-note">仅使用 GitHub 公开身份，不申请仓库或邮箱权限。登录即创建本站账户。</p>',
+            )
           : '<p class="account-note">' +
             (cloud
-              ? '管理员尚未启用 GitHub 登录。收藏与关注标签暂不可用。'
-              : '当前为 GitHub Pages 静态版，仅提供本地收藏。云端账号功能需在 Cloudflare 版本启用。') +
+              ? ui('管理员尚未启用 GitHub 登录。收藏与关注标签暂不可用。')
+              : ui(
+                  '当前为 GitHub Pages 静态版，仅提供本地收藏。云端账号功能需在 Cloudflare 版本启用。',
+                )) +
             '</p>') +
         (cloud
-          ? '<p class="account-privacy">收藏与关注标签需要登录后使用；游客模式下本站不保存收藏记录。</p>'
-          : '<p class="account-privacy">本地收藏仅保存在当前浏览器，不会自动上传这台设备上的记录。</p>');
+          ? ui(
+              '<p class="account-privacy">收藏与关注标签需要登录后使用；游客模式下本站不保存收藏记录。</p>',
+            )
+          : ui(
+              '<p class="account-privacy">本地收藏仅保存在当前浏览器，不会自动上传这台设备上的记录。</p>',
+            ));
       return;
     }
     content.innerHTML =
@@ -64,16 +76,22 @@ export function initAccount(hooks: Hooks) {
       esc(state.user.displayName) +
       '</h3><p>@' +
       esc(state.user.login) +
-      '（GitHub 已连接）</p></div><span class="account-connected">已同步</span></div>' +
+      ui('（GitHub 已连接）</p></div><span class="account-connected">已同步</span></div>') +
       '<div class="account-stats"><div><strong>' +
       state.favorites.length +
-      '</strong><span>云端收藏 / 200</span></div><div><strong>' +
+      ui('</strong><span>云端收藏 / 200</span></div><div><strong>') +
       state.tags.length +
-      '</strong><span>关注标签 / 30</span></div></div>' +
-      '<form id="profile-form" class="account-form"><label for="display-name">显示昵称</label><div class="account-input-row"><input id="display-name" name="displayName" maxlength="60" required value="' +
+      ui('</strong><span>关注标签 / 30</span></div></div>') +
+      ui(
+        '<form id="profile-form" class="account-form"><label for="display-name">显示昵称</label><div class="account-input-row"><input id="display-name" name="displayName" maxlength="60" required value="',
+      ) +
       esc(state.user.displayName) +
-      '" autocomplete="nickname"><button class="secondary-button" type="submit">保存</button></div></form>' +
-      '<section class="account-interests" aria-labelledby="interests-title"><h3 id="interests-title">关注标签</h3><p class="account-note">点击标签阅读相关资讯，也可以在资讯区直接关注当前标签。</p><div class="account-tags">' +
+      ui(
+        '" autocomplete="nickname"><button class="secondary-button" type="submit">保存</button></div></form>',
+      ) +
+      ui(
+        '<section class="account-interests" aria-labelledby="interests-title"><h3 id="interests-title">关注标签</h3><p class="account-note">点击标签阅读相关资讯，也可以在资讯区直接关注当前标签。</p><div class="account-tags">',
+      ) +
       state.tags
         .map(
           (tag) =>
@@ -83,13 +101,17 @@ export function initAccount(hooks: Hooks) {
             esc(tag) +
             '</button><button data-account="unfollow" data-tag="' +
             esc(tag) +
-            '" aria-label="取消关注 ' +
+            ui('" aria-label="取消关注 ') +
             esc(tag) +
             '">×</button></span>',
         )
         .join('') +
-      '</div><form id="tag-form" class="account-input-row"><label class="sr-only" for="follow-tag">添加关注标签</label><input id="follow-tag" name="tag" maxlength="40" placeholder="例如 ChatGPT、DeepSeek" required><button class="secondary-button" type="submit">关注</button></form></section>' +
-      '<p class="account-privacy">收藏仅在当前资讯快照内展示；旧资讯 ID 会保留，但暂不提供历史全文归档。关注标签用于快速筛选，不发送邮件或通知。</p><button class="text-link account-logout" data-account="logout">退出登录</button>';
+      ui(
+        '</div><form id="tag-form" class="account-input-row"><label class="sr-only" for="follow-tag">添加关注标签</label><input id="follow-tag" name="tag" maxlength="40" placeholder="例如 ChatGPT、DeepSeek" required><button class="secondary-button" type="submit">关注</button></form></section>',
+      ) +
+      ui(
+        '<p class="account-privacy">收藏仅在当前资讯快照内展示；旧资讯 ID 会保留，但暂不提供历史全文归档。关注标签用于快速筛选，不发送邮件或通知。</p><button class="text-link account-logout" data-account="logout">退出登录</button>',
+      );
     content.querySelectorAll<HTMLButtonElement>('button').forEach((el) => {
       el.disabled = busy;
     });
@@ -113,7 +135,7 @@ export function initAccount(hooks: Hooks) {
         hooks.saved(cloud ? [] : null);
       }
       throw new Error(
-        typeof result.error === 'string' ? result.error : '账号请求失败，请稍后重试。',
+        typeof result.error === 'string' ? result.error : ui('账号请求失败，请稍后重试。'),
       );
     }
     return result as Session;
@@ -136,24 +158,24 @@ export function initAccount(hooks: Hooks) {
     } catch (error) {
       checking = false;
       failed = true;
-      status.textContent = error instanceof Error ? error.message : '连接失败。';
+      status.textContent = error instanceof Error ? error.message : ui('连接失败。');
       render();
     }
   }
   async function mutate(path: string, body: unknown, message: string) {
     if (busy) {
-      hooks.toast('上一项操作尚未完成，请稍等。');
+      hooks.toast(ui('上一项操作尚未完成，请稍等。'));
       return;
     }
     busy = true;
-    status.textContent = '正在同步…';
+    status.textContent = ui('正在同步…');
     render();
     try {
       apply(await request(path, 'PUT', body));
       status.textContent = message;
       hooks.toast(message);
     } catch (error) {
-      status.textContent = error instanceof Error ? error.message : '同步失败，未保存。';
+      status.textContent = error instanceof Error ? error.message : ui('同步失败，未保存。');
       hooks.toast(status.textContent);
     } finally {
       busy = false;
@@ -172,9 +194,13 @@ export function initAccount(hooks: Hooks) {
     if (!(event.target instanceof HTMLFormElement)) return;
     const form = new FormData(event.target);
     if (event.target.id === 'profile-form')
-      void mutate('/api/user/profile', { displayName: form.get('displayName') }, '昵称已保存。');
+      void mutate(
+        '/api/user/profile',
+        { displayName: form.get('displayName') },
+        ui('昵称已保存。'),
+      );
     if (event.target.id === 'tag-form')
-      void mutate('/api/user/tags', { tag: form.get('tag'), followed: true }, '已关注标签。');
+      void mutate('/api/user/tags', { tag: form.get('tag'), followed: true }, ui('已关注标签。'));
   });
   content.addEventListener('click', async (event) => {
     const target =
@@ -192,7 +218,11 @@ export function initAccount(hooks: Hooks) {
       return;
     }
     if (target.dataset.account === 'unfollow') {
-      await mutate('/api/user/tags', { tag: target.dataset.tag, followed: false }, '已取消关注。');
+      await mutate(
+        '/api/user/tags',
+        { tag: target.dataset.tag, followed: false },
+        ui('已取消关注。'),
+      );
       return;
     }
     if (target.dataset.account === 'logout') {
@@ -201,10 +231,10 @@ export function initAccount(hooks: Hooks) {
       try {
         await request('/api/auth/logout', 'POST');
         apply({ available: true, user: null, favorites: [], tags: [] });
-        status.textContent = '已退出登录。';
+        status.textContent = ui('已退出登录。');
         hooks.toast(status.textContent);
       } catch (error) {
-        status.textContent = error instanceof Error ? error.message : '退出失败，请重试。';
+        status.textContent = error instanceof Error ? error.message : ui('退出失败，请重试。');
       } finally {
         busy = false;
         render();
@@ -217,7 +247,7 @@ export function initAccount(hooks: Hooks) {
   if (cloud && params.has('auth')) {
     const success = params.get('auth') === 'success';
     hooks.toast(
-      success ? 'GitHub 登录成功，正在加载云端收藏。' : 'GitHub 登录未完成，请重新尝试。',
+      success ? ui('GitHub 登录成功，正在加载云端收藏。') : ui('GitHub 登录未完成，请重新尝试。'),
     );
     params.delete('auth');
     history.replaceState(
@@ -226,30 +256,43 @@ export function initAccount(hooks: Hooks) {
       location.pathname + (params.size ? '?' + params.toString() : '') + location.hash,
     );
   }
+  document.addEventListener('signal:language', () => {
+    // Keep unsaved profile/tag drafts when rebuilding translated controls.
+    const drafts = [...content.querySelectorAll<HTMLInputElement>('input')].map((input) => ({
+      id: input.id,
+      value: input.value,
+    }));
+    status.textContent = '';
+    render();
+    for (const draft of drafts) {
+      const input = content.querySelector<HTMLInputElement>('#' + CSS.escape(draft.id));
+      if (input) input.value = draft.value;
+    }
+  });
   return {
     save(id: string) {
       if (checking || failed) {
-        hooks.toast('请先在账户面板确认连接状态。');
+        hooks.toast(ui('请先在账户面板确认连接状态。'));
         return true;
       }
       if (!state.user) {
         if (!cloud) return false; // Pages 静态版：无后端，保留本地收藏
         dialog.showModal();
-        hooks.toast('登录后才能收藏。');
+        hooks.toast(ui('登录后才能收藏。'));
         return true;
       }
       const saved = !state.favorites.includes(id);
       void mutate(
         '/api/user/favorites',
         { id, saved },
-        saved ? '已保存到云端收藏。' : '已取消云端收藏。',
+        saved ? ui('已保存到云端收藏。') : ui('已取消云端收藏。'),
       );
       return true;
     },
     requireAuth(reason: string) {
       if (!cloud || state.user) return false;
       if (checking || failed) {
-        hooks.toast('请先在账户面板确认连接状态。');
+        hooks.toast(ui('请先在账户面板确认连接状态。'));
         return true;
       }
       dialog.showModal();
@@ -260,10 +303,14 @@ export function initAccount(hooks: Hooks) {
       if (!tag) return;
       if (!state.user || checking || failed) {
         dialog.showModal();
-        hooks.toast('登录后可关注标签。');
+        hooks.toast(ui('登录后可关注标签。'));
         return;
       }
-      void mutate('/api/user/tags', { tag, followed: true }, '已关注标签，可在账户面板快速阅读。');
+      void mutate(
+        '/api/user/tags',
+        { tag, followed: true },
+        ui('已关注标签，可在账户面板快速阅读。'),
+      );
     },
   };
 }
