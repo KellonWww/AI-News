@@ -1,0 +1,456 @@
+{
+  "now": "2026-10-24T00:00:00.000Z",
+  "cases": [
+    {
+      "name": "pushes cannot revive old or undated stories",
+      "items": [
+        {
+          "id": "old",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/old",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-09-01T00:00:00.000Z",
+          "updatedAt": "2026-10-24T00:00:00.000Z",
+          "rankScore": 50
+        },
+        {
+          "id": "missing",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/missing",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": null,
+          "updatedAt": "2026-10-24T00:00:00.000Z",
+          "rankScore": 50
+        },
+        {
+          "id": "future",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/future",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-25T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "valid",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/valid",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        }
+      ],
+      "news": ["valid"],
+      "tools": []
+    },
+    {
+      "name": "old high-star repositories are not new tools",
+      "items": [
+        {
+          "id": "old-repo",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/old-repo",
+          "sourceId": "github-projects",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2023-01-01T00:00:00.000Z",
+          "updatedAt": "2026-10-24T00:00:00.000Z",
+          "rankScore": 100
+        },
+        {
+          "id": "new-repo",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/new-repo",
+          "sourceId": "github-projects",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "model",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/model",
+          "sourceId": "hf-models",
+          "sourceName": "Source",
+          "categories": ["models"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        }
+      ],
+      "news": [],
+      "tools": ["model", "new-repo"]
+    },
+    {
+      "name": "RSS model coverage remains a story",
+      "items": [
+        {
+          "id": "blog",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/blog",
+          "sourceId": "hf-blog",
+          "sourceName": "Source",
+          "categories": ["models", "news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        }
+      ],
+      "news": ["blog"],
+      "tools": []
+    },
+    {
+      "name": "canonical URLs and per-source limits remove repetition",
+      "items": [
+        {
+          "id": "a",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/a",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "b",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/a/?utm_source=test",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "c",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/c",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "d",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/d",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "e",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/e",
+          "sourceId": "github-blog",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        }
+      ],
+      "news": ["a", "c", "e"],
+      "tools": []
+    },
+    {
+      "name": "edition has at most seven stories and three tools",
+      "items": [
+        {
+          "id": "news-0",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-0",
+          "sourceId": "news-source-0",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-1",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-1",
+          "sourceId": "news-source-1",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-2",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-2",
+          "sourceId": "news-source-2",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-3",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-3",
+          "sourceId": "news-source-3",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-4",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-4",
+          "sourceId": "news-source-4",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-5",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-5",
+          "sourceId": "news-source-5",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-6",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-6",
+          "sourceId": "news-source-6",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-7",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-7",
+          "sourceId": "news-source-7",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-8",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-8",
+          "sourceId": "news-source-8",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-0",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-0",
+          "sourceId": "tool-source-0",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-1",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-1",
+          "sourceId": "tool-source-1",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-2",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-2",
+          "sourceId": "tool-source-2",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-3",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-3",
+          "sourceId": "tool-source-3",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-4",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-4",
+          "sourceId": "tool-source-4",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-10-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        }
+      ],
+      "news": ["news-0", "news-1", "news-2", "news-3", "news-4", "news-5", "news-6"],
+      "tools": ["tool-0", "tool-1", "tool-2"]
+    },
+    {
+      "name": "empty feeds stay empty",
+      "items": [],
+      "news": [],
+      "tools": []
+    },
+    {
+      "name": "freshness window includes its exact boundary",
+      "items": [
+        {
+          "id": "news-boundary",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-boundary",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-17T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "news-expired",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/news-expired",
+          "sourceId": "qbitai",
+          "sourceName": "Source",
+          "categories": ["news"],
+          "tags": [],
+          "publishedAt": "2026-10-16T23:59:59.999Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-boundary",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-boundary",
+          "sourceId": "github-projects",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-09-24T00:00:00.000Z",
+          "updatedAt": null,
+          "rankScore": 50
+        },
+        {
+          "id": "tool-expired",
+          "title": "Example story",
+          "summary": "Original summary",
+          "url": "https://example.com/tool-expired",
+          "sourceId": "github-projects",
+          "sourceName": "Source",
+          "categories": ["projects"],
+          "tags": [],
+          "publishedAt": "2026-09-23T23:59:59.999Z",
+          "updatedAt": null,
+          "rankScore": 50
+        }
+      ],
+      "news": ["news-boundary"],
+      "tools": ["tool-boundary"]
+    }
+  ]
+}

@@ -43,8 +43,8 @@ async def editor_note(env, titles):
         return None
     model = env_get(env, 'AI_EDITOR_MODEL', DEFAULT_MODEL) or DEFAULT_MODEL
     prompt = (
-        '根据今日以下标题，写 3-4 句中文编者按，不超过 120 字，概括今天 AI 领域的重点与基调。'
-        '只依据给出的标题，不要编造具体数字或事件：\n'
+        '根据今日以下标题，写 3-4 句中文编者按，不超过 120 字，概括 AI 与开发者技术领域的重点与基调。'
+        '只依据给出的标题，不要编造具体数字或事件；标注为社区讨论的内容只能视为讨论线索，不得当作已证实的事实，也不得将讨论时间当作事件发生时间：\n'
         + '\n'.join('- ' + title for title in titles[:MAX_TITLES])
     )
     payload = {

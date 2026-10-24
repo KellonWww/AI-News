@@ -12,7 +12,7 @@ from db import db_all, get_meta
 from util import epoch_ms
 
 SITE_TITLE = 'signal. AI 日报'
-SITE_DESC = '每天 08:05（北京时间）出刊的 AI 头版：开源、模型、动态一网打尽'
+SITE_DESC = '每天 08:05（北京时间）出刊的 AI 与开发者技术头版：开源、模型、技术动态'
 LANGUAGE = 'zh-cn'
 MAX_ITEMS = 50
 _HEADERS = [

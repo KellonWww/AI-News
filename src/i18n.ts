@@ -31,8 +31,8 @@ function syncDocument() {
     ?.setAttribute(
       'content',
       language === 'en'
-        ? 'Discover AI news, open-source projects, models, Agent Skills and development stories. Daily picks, linked to the original.'
-        : 'signal. AI 日报。每天发现值得关注的 AI 新闻、开源项目、模型、Agent Skills 与开发实践。每日精选，直达原文。',
+        ? 'Discover AI news, open-source projects, models, Agent Skills and developer news. Daily picks, linked to the original.'
+        : 'signal. AI 日报。每天发现值得关注的 AI 新闻、开源项目、模型、Agent Skills 与开发者技术热点。每日精选，直达原文。',
     );
   document
     .querySelector('link[rel="alternate"]')

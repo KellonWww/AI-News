@@ -42,13 +42,66 @@
       <button id="account-button" class="account-trigger" aria-haspopup="dialog">我的账户</button>
       <button class="icon-button mobile-saved" data-action="saved" aria-label="查看我的收藏">
         {{icon:bookmark}}</button
-      ><span class="header-rule"></span
-      ><button
-        id="theme-toggle"
-        class="icon-button"
-        data-action="theme"
-        aria-label="切换主题"
-      ></button>
+      ><span class="header-rule"></span>
+      <div class="theme-picker" id="theme-picker">
+        <div class="theme-switch-actions">
+          <button id="theme-toggle" class="icon-button" type="button" aria-label="切换主题">
+            <svg
+              class="icon theme-toggle-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <g class="theme-sun">
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+                />
+              </g>
+              <path class="theme-moon" d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />
+            </svg>
+            <span id="theme-name"></span>
+          </button>
+          <button
+            id="theme-settings"
+            class="theme-settings-trigger"
+            type="button"
+            aria-label="主题设置"
+            title="主题设置与跟随系统"
+            aria-controls="theme-panel"
+            aria-expanded="false"
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+          </button>
+        </div>
+        <div class="theme-panel" id="theme-panel" role="group" aria-label="选择主题" hidden>
+          <p class="theme-group-label">阅读的两种光线</p>
+          <button type="button" class="theme-option" data-theme-choice="dark" aria-pressed="false">
+            <span class="theme-dots" data-palette="dark" aria-hidden="true"
+              ><i></i><i></i><i></i></span
+            ><span>夜航</span><span class="theme-option-check" aria-hidden="true">✓</span>
+          </button>
+          <button type="button" class="theme-option" data-theme-choice="light" aria-pressed="false">
+            <span class="theme-dots" data-palette="light" aria-hidden="true"
+              ><i></i><i></i><i></i></span
+            ><span>日光</span><span class="theme-option-check" aria-hidden="true">✓</span>
+          </button>
+          <button
+            type="button"
+            class="theme-system"
+            data-theme-choice="system"
+            aria-pressed="false"
+          >
+            <span>跟随系统</span><span id="theme-system-status"></span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </header>
@@ -57,7 +110,15 @@
     <span class="edition"
       ><span class="live-dot"></span> THE DAILY SIGNAL <span class="edition-slash">/</span>
       <span id="edition-date"></span></span
-    ><span class="edition-status" id="edition-status">正在连接今日灵感</span>
+    ><button
+      class="edition-status"
+      id="edition-status"
+      data-action="sources"
+      aria-haspopup="dialog"
+      aria-controls="sources-dialog"
+    >
+      正在连接今日灵感
+    </button>
   </div>
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
@@ -68,7 +129,8 @@
         ><span class="hero-subtitle">AI 世界的<br />每日来信。</span>
       </h1>
       <p class="hero-description">
-        少一点噪声，多一点新知。<br />从开源灵感到下一代模型，捕捉值得留下的信号。
+        少一点噪声，多一点新知。<br />先读近期动态，再找能用的工具；每期最多 10
+        条，不拿旧项目更新充新闻。
       </p>
       <div class="hero-cta">
         <a href="#discover" class="primary-button">开始阅读 {{icon:arrow}}</a
@@ -160,22 +222,26 @@
     </figure>
   </section>
   <div id="health-notice" class="health-notice" hidden></div>
+  <p class="edition-policy">
+    动态看近 7 天的发布日期，工具看近 30 天的创建日期；每源最多 2
+    条，数量不足不凑数。模型页面创建不等于正式发布。
+  </p>
   <section class="highlights" aria-label="本期精选">
     <div id="featured" class="feature-card skeleton" aria-busy="true">
       <span>正在整理值得一读的内容…</span>
     </div>
-    <aside class="hero-paper" aria-label="今日要目">
+    <aside class="hero-paper" aria-label="动态要目">
       <p class="paper-mast">
-        <span class="live-dot"></span><span class="paper-brand">signal 要目</span
+        <span class="live-dot"></span><span class="paper-brand">signal 动态</span
         ><span class="paper-stamp" id="paper-stamp"></span>
       </p>
       <p class="editor-note" id="editor-note" hidden></p>
-      <ol id="paper-list" class="paper-list" aria-label="最新信号">
+      <ol id="paper-list" class="paper-list" aria-label="近期动态">
         <li class="skeleton-line"></li>
         <li class="skeleton-line"></li>
         <li class="skeleton-line"></li>
       </ol>
-      <p class="paper-foot" id="paper-foot">正在排版今日要目…</p>
+      <p class="paper-foot" id="paper-foot">正在排版动态要目…</p>
     </aside>
   </section>
   <section id="discover" class="discover-section" aria-labelledby="discover-title">
@@ -193,7 +259,8 @@
       </div>
       <aside class="trending-card">
         <div class="section-kicker">
-          <span>{{icon:bolt}} 开源风向标</span><span class="small-label">按 stars 排序</span>
+          <span>{{icon:bolt}} 近期工具发现</span
+          ><span class="small-label">新建优先，不是热度榜</span>
         </div>
         <div id="trending">
           <div class="skeleton-line"></div>
@@ -298,6 +365,18 @@
     <span id="updated-at">正在读取快照…</span><span>No hype, just signal.</span>
   </div>
 </footer>
+<dialog id="sources-dialog" aria-labelledby="sources-title">
+  <div class="dialog-heading">
+    <h2 id="sources-title">关于与来源</h2>
+    <button class="icon-button" data-action="close-dialog" aria-label="关闭来源面板">
+      {{icon:close}}
+    </button>
+  </div>
+  <p class="dialog-intro">
+    原文可追溯，采集状态不代表内容质量。来源失败时可能保留旧记录，请留意条目的实际日期。
+  </p>
+  <div id="source-list"></div>
+</dialog>
 <dialog id="search-dialog" aria-labelledby="search-title" aria-describedby="search-hint">
   <div class="dialog-heading">
     <h2 id="search-title">站内搜索</h2>

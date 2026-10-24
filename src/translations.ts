@@ -1,5 +1,49 @@
 /** Developer-owned interface copy only. Feed content and user input are never translated. */
 export const english: Record<string, string> = {
+  '快照生成于 ': 'Snapshot generated at ',
+  '最近成功同步：': 'Last successful sync: ',
+  同步正常: 'Synced',
+  '原文可追溯，采集状态不代表内容质量。来源失败时可能保留旧记录，请留意条目的实际日期。':
+    'Original sources are linked. Sync status is not a quality rating. Failed sources may retain older records; check the actual item dates.',
+  '正在排版动态要目…': 'Preparing recent stories…',
+  '先读近期动态，再找能用的工具；每期最多 10 条，不拿旧项目更新充新闻。':
+    'Read recent stories, then discover useful tools. Up to 10 picks, without mistaking repository pushes for news.',
+  '动态看近 7 天的发布日期，工具看近 30 天的创建日期；每源最多 2 条，数量不足不凑数。模型页面创建不等于正式发布。':
+    'Stories published in the last 7 days; tools created in the last 30. At most 2 per source, without padding. Model page creation is not a release date.',
+  动态要目: 'Recent stories',
+  'signal 动态': 'signal stories',
+  近期动态: 'Recent stories',
+  近期工具发现: 'Recent tool discoveries',
+  '新建优先，不是热度榜': 'Newest first, not a popularity chart',
+  '近 7 天 · 动态精选': 'Stories from the last 7 days',
+  '近 7 天没有可核实发布日期的动态。历史内容仍可在下方浏览。':
+    'No stories with verified publication dates in the last 7 days. Browse older content below.',
+  '近 7 天暂无更多可核实日期的动态，不用旧内容凑数。':
+    'No more dated stories from the last 7 days. Older content is not used as filler.',
+  '近 30 天暂无新建工具，完整项目库仍可浏览。':
+    'No newly created tools in the last 30 days. The full library is still available below.',
+  '本期精选 ': 'This edition: ',
+  ' 条 · 动态与工具分开读': ' picks · stories and tools, separately',
+  '仓库 / 页面更新 ': 'Repository / page updated ',
+  '页面创建 ': 'Page created ',
+  适合开发者: 'For developers',
+  '从原文教程了解实现方法；运行环境与步骤以作者说明为准。':
+    'Read the original tutorial for implementation details, requirements and steps.',
+  '关注 AI 动态的读者': 'For readers following AI',
+  '查看原文中的事件、发布时间与信息出处。':
+    'Check the event, publication date and attribution in the original story.',
+  'Agent 使用者': 'For Agent users',
+  '查看技能说明、依赖与权限，再决定是否接入自己的工作流。':
+    'Review skill instructions, dependencies and permissions before adding it to your workflow.',
+  模型开发者: 'For model developers',
+  '先核对模型卡中的适用任务、许可证与运行要求。':
+    'Check the model card for supported tasks, licensing and runtime requirements.',
+  '想体验 AI 的读者': 'For readers exploring AI',
+  '查看演示与使用条件；可用性和费用以原站为准。':
+    'Review the demo and terms; availability and pricing are determined by the original site.',
+  开发者: 'Developers',
+  '结合仓库描述评估用途，再核对安装方法、许可证与维护情况。':
+    'Assess the repository description, then check setup instructions, licensing and maintenance.',
   '把注意力，留给值得的事': 'Give your attention to what matters',
   'AI 世界的': 'From the world of AI,',
   '每日来信。': 'a daily dispatch.',
@@ -192,6 +236,14 @@ export const english: Record<string, string> = {
   统计: 'Statistics',
   查看我的收藏: 'View saved stories',
   切换主题: 'Switch theme',
+  主题设置: 'Theme settings',
+  主题设置与跟随系统: 'Theme settings and system preference',
+  选择主题: 'Choose theme',
+  阅读的两种光线: 'Two lights for reading',
+  夜航: 'Nightfall',
+  日光: 'Daylight',
+  跟随系统: 'Follow system',
+  ' · 已开启': ' · On',
   正在连接今日灵感: 'Connecting to today’s signals',
   '独立视角 · 开放信源': 'INDEPENDENT EYES / OPEN SOURCES',
   'AI 世界的每日来信。': 'A daily letter from the AI world.',
@@ -257,8 +309,8 @@ export const english: Record<string, string> = {
   '筛选包含已识别国内品牌的内容及已核验的国内官方开源组织；中文媒体中的海外报道不会自动归入。覆盖不保证完整。':
     'includes recognized Chinese brands and verified official Chinese open-source organizations. Overseas news in Chinese media is not automatically included. Coverage is not exhaustive.',
   '每天更新，但不伪装实时。': 'Updated daily. Not pretending to be live.',
-  '云端版每小时滚动更新部分来源，北京时间次日 08:05 前轮完全部 12':
-    'The cloud version refreshes a subset of sources hourly, completing all 12',
+  '云端版每小时滚动更新部分来源，北京时间次日 08:05 前轮完全部 18':
+    'The cloud version refreshes a subset of sources hourly, completing all 18',
   '源；免费调度可能延迟。单源失败保留旧快照，超过 36 小时提示过期。':
     'sources by 08:05 Beijing time the next day. Free scheduling may be delayed. Failed sources keep their previous snapshots; data older than 36 hours is flagged.',
   '收藏与关注标签需要登录 GitHub': 'Saving stories and following tags requires a GitHub',
@@ -282,6 +334,17 @@ export const english: Record<string, string> = {
   实用技巧: 'Guides',
   趣味应用: 'Apps',
   开发实践: 'Development',
+  技术热点: 'Developer news',
+  '讨论发布 ': 'Discussion posted ',
+  社区积分: 'Community points',
+  社区讨论: 'Community discussion',
+  社区文章: 'Community article',
+  '社区作者经验不等于官方结论；环境、版本与效果请结合原文自行核验。':
+    'Community author experience is not an official conclusion. Verify environments, versions and results against the original article.',
+  '社区观点不等于官方结论；日期为帖子创建时间，不代表原文发布或事件发生时间。':
+    'Community views are not official confirmation. Dates refer to discussion creation, not the original article or event.',
+  '关注技术变化及其影响；版本、兼容性和行动建议请核对官方公告。':
+    'Explore technical changes and their impact. Verify versions, compatibility and required actions against official announcements.',
   跳转到资讯: 'Skip to stories',
   切换界面语言: 'Switch interface language',
   '语言已切换；当前浏览器无法保存偏好。':

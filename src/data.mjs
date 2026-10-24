@@ -7,7 +7,7 @@ export const CATEGORY_LABELS = Object.freeze({
   models: '模型动态',
   tips: '实用技巧',
   apps: '趣味应用',
-  dev: '开发实践',
+  dev: '技术热点',
 });
 export function safeUrl(value) {
   if (typeof value !== 'string') return null;
@@ -173,4 +173,87 @@ export function filterItems(
           ? growthDelta(b) - growthDelta(a) || itemTime(b) - itemTime(a) || a.id.localeCompare(b.id)
           : itemTime(b) - itemTime(a) || b.rankScore - a.rankScore || a.id.localeCompare(b.id),
     );
+}
+
+/** Repository/model timestamps describe artifacts, not news events. */
+export function isResource(item) {
+  if (['qbitai', 'hf-blog', 'github-blog'].includes(item.sourceId)) return false;
+  return item.categories.some((c) => ['projects', 'skills', 'models', 'apps'].includes(c));
+}
+
+/** A small, source-diverse edition. Never pad it with stale or undated entries. */
+export function selectEdition(items, now = Date.now()) {
+  const day = 86400000;
+  const recent = (value, days) => {
+    const ts = Date.parse(value || '');
+    return Number.isFinite(ts) && ts <= now && ts >= now - days * day;
+  };
+  const seen = new Set();
+  const pick = (candidates, limit) => {
+    const sources = new Map();
+    const result = [];
+    let technical = 0;
+    for (const item of candidates) {
+      const url = canonicalUrl(item.url);
+      const count = sources.get(item.sourceId) || 0;
+      if (
+        !url ||
+        seen.has(url) ||
+        count >= 2 ||
+        (item.categories.includes('dev') && technical >= 3)
+      )
+        continue;
+      if (item.categories.includes('dev')) technical++;
+      seen.add(url);
+      sources.set(item.sourceId, count + 1);
+      result.push(item);
+      if (result.length === limit) break;
+    }
+    return result;
+  };
+  const news = pick(
+    items
+      .filter((i) => !isResource(i) && recent(i.publishedAt, 7))
+      .sort(
+        (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.id.localeCompare(b.id),
+      ),
+    7,
+  );
+  const tools = pick(
+    items
+      .filter((i) => isResource(i) && recent(i.publishedAt, 30))
+      .sort(
+        (a, b) =>
+          Date.parse(b.publishedAt) - Date.parse(a.publishedAt) ||
+          b.rankScore - a.rankScore ||
+          a.id.localeCompare(b.id),
+      ),
+    3,
+  );
+  return { news, tools };
+}
+
+/** Reader guidance is category context, never a fabricated product capability. */
+export function readingContext(item) {
+  if (!isResource(item)) {
+    if (item.categories.includes('dev') && item.tags.includes('社区文章'))
+      return ['适合开发者', '社区作者经验不等于官方结论；环境、版本与效果请结合原文自行核验。'];
+    if (item.categories.includes('dev'))
+      return item.tags.includes('社区讨论')
+        ? [
+            '适合开发者',
+            '社区观点不等于官方结论；日期为帖子创建时间，不代表原文发布或事件发生时间。',
+          ]
+        : ['适合开发者', '关注技术变化及其影响；版本、兼容性和行动建议请核对官方公告。'];
+    if (item.categories.includes('tips') || item.categories.includes('dev'))
+      return ['适合开发者', '从原文教程了解实现方法；运行环境与步骤以作者说明为准。'];
+    return ['关注 AI 动态的读者', '查看原文中的事件、发布时间与信息出处。'];
+  }
+  if (item.categories.includes('skills'))
+    return ['Agent 使用者', '查看技能说明、依赖与权限，再决定是否接入自己的工作流。'];
+  if (item.categories.includes('models'))
+    return ['模型开发者', '先核对模型卡中的适用任务、许可证与运行要求。'];
+  if (item.categories.includes('apps'))
+    return ['想体验 AI 的读者', '查看演示与使用条件；可用性和费用以原站为准。'];
+  return ['开发者', '结合仓库描述评估用途，再核对安装方法、许可证与维护情况。'];
 }

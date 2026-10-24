@@ -134,6 +134,85 @@ export function normalizeHf(payload, source, now) {
     ];
   });
 }
+// Deliberately conservative: community popularity alone does not imply developer relevance.
+const TECH_TOPIC =
+  /\b(php|java|javascript|typescript|python|rust|golang|go|zig|swift|kotlin|ruby|rails|react|vue|angular|svelte|node\.?js|deno|bun|linux|unix|windows|android|ios|macos|docker|kubernetes|k8s|postgres\w*|mysql|sqlite|redis|mongodb|sql|database|compiler|compilers|programming|software|developer|developers|coding|code|git|github|gitlab|open.source|api|sdk|npm|pypi|package|dependency|dependencies|security|vulnerability|cve|rce|webassembly|wasm|browser|browsers|cloud|server|servers|distributed|debugging|performance|benchmark|benchmarks|llm|llms|agent|agents|ai)\b|开源|编程|开发|程序员|框架|数据库|编译|语言|漏洞|供应链|容器|云原生|中间件|运维|架构|故障|宕机|回滚|复盘|浏览器|许可证|模型|代码|算法|线程|内存|缓存|性能|内核|构建|依赖|版本|发布|升级|更新/i;
+const TECH_NOISE =
+  /决赛|大赛|入围|获奖|报名|征文|沙龙|直播预告|赞助|招商|生态合作|招聘|求职|找工作|求助|求推荐|求购|拼车|合租|转让|优惠码|邀请码|推广|抽奖|引流|\b(hiring|who is hiring|ask hn:|satire|satirical)\b/i;
+export function keepTechnical(title, summary = '', tags = []) {
+  return (
+    !TECH_NOISE.test(title + ' ' + tags.join(' ')) &&
+    TECH_TOPIC.test(title + ' ' + summary + ' ' + tags.join(' '))
+  );
+}
+const communitySummary =
+  '社区讨论线索，不等于官方确认；日期为帖子创建时间，原文与完整上下文见讨论页。';
+export function normalizeCommunity(payload, source, now) {
+  if (!Array.isArray(payload)) throw new Error('社区返回无效数据');
+  return payload.slice(0, 30).flatMap((r, index) => {
+    if (!r || typeof r !== 'object') return [];
+    const hn = source.kind === 'hn';
+    if (
+      hn &&
+      (r.type !== 'story' || r.deleted || r.dead || !Number.isSafeInteger(r.id) || r.id <= 0)
+    )
+      return [];
+    const tags = Array.isArray(r.tags)
+      ? r.tags.filter((t) => typeof t === 'string').slice(0, 4)
+      : [];
+    const summary = plainText(hn ? r.text : r.description);
+    if (!keepTechnical(plainText(r.title), summary, tags)) return [];
+    const url = hn ? 'https://news.ycombinator.com/item?id=' + r.id : r.comments_url;
+    const i = base(source, url, r.title, now, index);
+    if (
+      !i ||
+      (hn
+        ? new URL(i.url).hostname !== 'news.ycombinator.com'
+        : new URL(i.url).hostname !== 'lobste.rs')
+    )
+      return [];
+    const publishedAt = date(
+      hn && Number.isFinite(r.time) && r.time > 0 && r.time < 8640000000000
+        ? new Date(r.time * 1000).toISOString()
+        : !hn
+          ? r.created_at
+          : null,
+      now,
+    );
+    if (
+      !publishedAt ||
+      Date.parse(publishedAt) > Date.parse(now) ||
+      Date.parse(publishedAt) < Date.parse(now) - 7 * 86400000
+    )
+      return [];
+    return [
+      {
+        ...i,
+        categories: ['dev'],
+        tags: ['社区讨论', ...tags],
+        summary: summary ? plainText(summary, 140) + ' · ' + communitySummary : communitySummary,
+        publishedAt,
+        metricLabel: 'points',
+        metricValue: Number.isFinite(r.score) ? Math.max(0, r.score) : null,
+      },
+    ];
+  });
+}
+export async function fetchHackerNews(source, now) {
+  const ids = JSON.parse(await fetchText(source.url));
+  if (!Array.isArray(ids) || !ids.length || ids.some((id) => !Number.isSafeInteger(id) || id <= 0))
+    throw new Error('Hacker News 榜单无效');
+  const records = [];
+  // 12 details + the index, each with <=3 attempts: <=39 subrequests even under retries.
+  // Stop on network failure so an incomplete refresh cannot replace the previous source snapshot.
+  for (const id of [...new Set(ids)].slice(0, 12)) {
+    records.push(
+      JSON.parse(await fetchText('https://hacker-news.firebaseio.com/v0/item/' + id + '.json')),
+    );
+  }
+  return normalizeCommunity(records, source, now);
+}
+
 export function normalizeRss(text, source, now) {
   if (
     typeof text !== 'string' ||
@@ -154,27 +233,40 @@ export function normalizeRss(text, source, now) {
     const title = typeof r.title === 'string' ? r.title : r.title?.['#text'];
     const i = base(source, url, title, now, index);
     if (!i) return [];
-    const rawSummary = r.description ?? r.summary ?? '';
+    const rawSummary = r.description ?? r.summary ?? r.content ?? '';
     const summary = plainText(typeof rawSummary === 'string' ? rawSummary : rawSummary['#text']);
     const textForRules = i.title.toLowerCase();
-    const categories = ['news'];
-    if (source.id === 'github-blog') categories.push('dev');
+    if (source.tech && !keepTechnical(i.title, summary)) return [];
+    const categories = source.tech ? ['dev'] : ['news'];
+    if (!source.tech && source.id === 'github-blog') categories.push('dev');
     if (
+      !source.tech &&
       /\b(how to|guide|tips|tutorial|learn|skills|best practices|build|building)\b/.test(
         textForRules,
       )
     )
       categories.push('tips');
-    if (/\b(model|models|release|releases|introducing|llm)\b|模型|大模型/.test(textForRules))
+    if (
+      !source.tech &&
+      /\b(model|models|release|releases|introducing|llm)\b|模型|大模型/.test(textForRules)
+    )
       categories.push('models');
-    const publishedAt = date(r.pubDate ?? r.published ?? r.updated, now);
+    const publishedAt = date(r.pubDate ?? r.published ?? (source.tech ? null : r.updated), now);
     if (publishedAt && Date.parse(publishedAt) < Date.parse(now) - 30 * 86400000) return [];
     return [
       {
         ...i,
         summary: summary || '查看来源原文，了解完整背景与细节。',
         categories,
-        tags: [source.media ? '媒体报道' : '官方博客'],
+        tags: [
+          source.authorPosts
+            ? '社区文章'
+            : source.community
+              ? '社区讨论'
+              : source.media
+                ? '媒体报道'
+                : '官方博客',
+        ],
         publishedAt,
         updatedAt: date(r.updated, now),
         rankScore: Math.max(0, 95 - index * 3),
@@ -183,10 +275,20 @@ export function normalizeRss(text, source, now) {
   });
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const UPSTREAM_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+// The static collector persists this map outside public assets between invocations.
+export const sourceCooldowns = new Map();
 export async function fetchText(
   url,
   { headers = {}, fetchImpl = fetch, sleepImpl = sleep, timeout = 15000, attempts = 3 } = {},
 ) {
+  const host = new URL(url).hostname;
+  const cooldown = sourceCooldowns.get(host);
+  if (cooldown?.until > Date.now()) {
+    const error = new Error('源站冷却中，暂停至 ' + new Date(cooldown.until).toISOString());
+    error.retryable = false;
+    throw error;
+  }
   for (let attempt = 0; attempt < attempts; attempt++) {
     let delay = 500 * 2 ** attempt;
     try {
@@ -195,14 +297,26 @@ export async function fetchText(
         signal: AbortSignal.timeout(timeout),
       });
       if (!response.ok) {
-        const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
+        const retryable = [408, 500, 502, 503, 504].includes(response.status);
         const raw = response.headers.get('retry-after');
         if (raw) {
           const seconds = Number(raw);
           delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(raw) - Date.now();
-          delay = Math.max(0, delay);
+          delay = Number.isFinite(delay) ? Math.max(0, delay) : UPSTREAM_COOLDOWN_MS;
         }
         await response.body?.cancel();
+        if ([403, 429].includes(response.status)) {
+          const until = Date.now() + Math.max(UPSTREAM_COOLDOWN_MS, delay);
+          sourceCooldowns.set(host, { until, status: response.status });
+          console.warn(
+            'collection alert:',
+            host,
+            'HTTP',
+            response.status,
+            'paused until',
+            new Date(until).toISOString(),
+          );
+        }
         const error = new Error('HTTP ' + response.status);
         error.retryable = retryable && delay <= 10000;
         throw error;

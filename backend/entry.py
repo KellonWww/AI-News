@@ -102,7 +102,7 @@ class Default(WorkerEntrypoint):
 
     async def scheduled(self, controller, env=None, ctx=None):
         # One source per invocation via the COLLECT_SOURCES_PER_RUN cursor
-        # (free-plan 10ms CPU cap); crons every 2h roll all 12 sources daily.
+        # (free-plan CPU cap); 18 hourly cron runs roll all 18 sources daily.
         from collector import run_collection
 
         env = env if env is not None else self.env

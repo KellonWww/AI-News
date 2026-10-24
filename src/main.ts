@@ -3,12 +3,16 @@ import { initAccount } from './account';
 import './style.css';
 import './motion.css';
 import { initMotion } from './motion';
+import { initTheme } from './theme';
 import shell from './shell.html?raw';
 import {
   CATEGORY_LABELS,
   escapeHtml as esc,
   filterItems,
   growthDelta,
+  isResource,
+  readingContext,
+  selectEdition,
   validateFeed,
 } from './data.mjs';
 import type { Category, Feed, Item } from './types';
@@ -126,7 +130,13 @@ const metric = (i: Item) =>
     ? ''
     : compact.format(i.metricValue) +
       ' ' +
-      (i.metricLabel === 'stars' ? 'stars' : i.metricLabel === 'downloads' ? 'downloads' : 'likes');
+      (i.metricLabel === 'stars'
+        ? 'stars'
+        : i.metricLabel === 'downloads'
+          ? 'downloads'
+          : i.metricLabel === 'points'
+            ? 'points'
+            : 'likes');
 const SORT_NOTES: Record<string, string> = {
   hot: '热度参考为榜单名次的归一化排序，不代表真实热度或今日增长。',
   growth: '涨星最快按近期 stars 增量排序，仅适用于开源项目；其余内容排在后面。',
@@ -146,14 +156,7 @@ function renderEditionDate() {
   }).format(new Date());
 }
 renderEditionDate();
-function syncTheme() {
-  const dark = document.documentElement.dataset.theme === 'dark';
-  get('#theme-toggle').innerHTML = icon(dark ? 'sun' : 'moon');
-  get('#theme-toggle').setAttribute('aria-label', dark ? ui('切换浅色模式') : ui('切换深色模式'));
-  document
-    .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', dark ? '#142126' : '#f0ecdf');
-}
+const theme = initTheme(toast);
 function toast(message: string) {
   get('#toast').textContent = message;
   get('#toast').classList.add('visible');
@@ -218,6 +221,16 @@ function tagButtons(item: Item) {
     )
     .join('');
 }
+function readerGuide(item: Item) {
+  const context = readingContext(item);
+  return (
+    '<div class="reader-guide"><span>' +
+    esc(ui(context[0] || '')) +
+    '</span><p>' +
+    esc(ui(context[1] || '')) +
+    '</p></div>'
+  );
+}
 function card(item: Item) {
   const primary = item.categories[0] ?? 'news';
   return (
@@ -238,13 +251,21 @@ function card(item: Item) {
     icon('arrow') +
     '</a><p class="card-summary">' +
     esc(item.summary) +
-    '</p><div class="card-tags">' +
+    '</p>' +
+    readerGuide(item) +
+    '<div class="card-tags">' +
     tagButtons(item) +
     '</div><div class="card-bottom"><span title="' +
-    esc(stamp(item.updatedAt || item.publishedAt)) +
+    esc(stamp(isResource(item) ? item.updatedAt || item.publishedAt : item.publishedAt)) +
     '">' +
-    (item.updatedAt ? ui('更新 ') : item.publishedAt ? ui('发布 ') : '') +
-    dateText(item.updatedAt || item.publishedAt) +
+    esc(item.sourceName) +
+    ' · ' +
+    (isResource(item)
+      ? ui('仓库 / 页面更新 ')
+      : item.tags.includes('社区讨论')
+        ? ui('讨论发布 ')
+        : ui('发布 ')) +
+    dateText(isResource(item) ? item.updatedAt || item.publishedAt : item.publishedAt) +
     '</span></div>' +
     (item.metricValue !== null
       ? '<div class="metric-line">' +
@@ -258,13 +279,15 @@ function card(item: Item) {
           ? ui('累计关注')
           : item.metricLabel === 'downloads'
             ? ui('下载统计')
-            : ui('点赞统计')) +
+            : item.metricLabel === 'points'
+              ? ui('社区积分')
+              : ui('点赞统计')) +
         '</span></div>'
       : '') +
     '</article>'
   );
 }
-function renderPaper(featuredId?: string, excludeIds: string[] = []) {
+function renderPaper(featuredId?: string) {
   if (!feed) return;
   get('#paper-stamp').textContent = feed.generatedAt
     ? ui('付印 ') + stampTime.format(new Date(feed.generatedAt))
@@ -273,12 +296,9 @@ function renderPaper(featuredId?: string, excludeIds: string[] = []) {
   const note = get('#editor-note');
   note.textContent = feed.editorNote?.text || '';
   note.hidden = !feed.editorNote?.text;
-  // 头条卡与开源榜已各自展示的条目不再上要目，避免同屏重复
-  const picks = (filterItems(feed.items, { sort: 'latest' }) as Item[]).filter(
-    (i) => i.id !== featuredId && !excludeIds.includes(i.id),
-  );
+  const picks = (selectEdition(feed.items).news as Item[]).filter((i) => i.id !== featuredId);
   const lead = picks[0];
-  const rest = picks.slice(1, 5);
+  const rest = picks.slice(1, 6);
   get('#paper-list').innerHTML = lead
     ? '<li class="paper-lead"><a href="' +
       esc(lead.url) +
@@ -299,20 +319,22 @@ function renderPaper(featuredId?: string, excludeIds: string[] = []) {
             '</span></a></li>',
         )
         .join('')
-    : ui('<li class="paper-empty">今日要目暂无可读内容。</li>');
-  get('#paper-foot').textContent = feed.items.length + ui(' 条信号');
+    : ui('<li class="paper-empty">近 7 天暂无更多可核实日期的动态，不用旧内容凑数。</li>');
+  const edition = selectEdition(feed.items);
+  get('#paper-foot').textContent =
+    ui('本期精选 ') + (edition.news.length + edition.tools.length) + ui(' 条 · 动态与工具分开读');
 }
 function renderHighlights() {
   if (!feed) return;
-  const featured = filterItems(feed.items, { category: 'news', sort: 'latest' })[0] as
-    Item | undefined;
+  const edition = selectEdition(feed.items);
+  const featured = edition.news[0] as Item | undefined;
   const feature = get('#featured');
   feature.classList.remove('skeleton');
   feature.setAttribute('aria-busy', 'false');
   if (featured) {
     feature.innerHTML =
       ui(
-        '<div class="feature-top"><span class="feature-eyebrow"><span class="live-dot"></span> 本期值得一读</span>',
+        '<div class="feature-top"><span class="feature-eyebrow"><span class="live-dot"></span> 近 7 天 · 动态精选</span>',
       ) +
       saveButton(featured) +
       '</div><a class="feature-title" href="' +
@@ -321,9 +343,13 @@ function renderHighlights() {
       esc(featured.title) +
       '</h2></a><p>' +
       esc(featured.summary) +
-      '</p><div class="card-tags">' +
+      '</p>' +
+      readerGuide(featured) +
+      '<div class="card-tags">' +
       tagButtons(featured) +
       '</div><div class="feature-bottom"><span>' +
+      esc(featured.sourceName) +
+      ' · ' +
       dateText(featured.publishedAt) +
       '</span><a href="' +
       esc(featured.url) +
@@ -337,15 +363,12 @@ function renderHighlights() {
   } else {
     feature.innerHTML =
       ui(
-        '<span class="feature-eyebrow">本期值得一读</span><h2>好内容，值得等一等。</h2><p>暂时没有可用新闻，下方仍可发现更多精彩内容。</p><a class="feature-read" href="#discover">发现更多 ',
+        '<span class="feature-eyebrow">近 7 天 · 动态精选</span><h2>好内容，值得等一等。</h2><p>近 7 天没有可核实发布日期的动态。历史内容仍可在下方浏览。</p><a class="feature-read" href="#discover">发现更多 ',
       ) +
       icon('arrow') +
       '</a>';
   }
-  const trending = feed.items
-    .filter((i) => i.sourceId === 'github-projects')
-    .sort((a, b) => (b.metricValue ?? 0) - (a.metricValue ?? 0))
-    .slice(0, 3);
+  const trending = edition.tools as Item[];
   get('#trending').innerHTML = trending.length
     ? trending
         .map(
@@ -357,18 +380,17 @@ function renderHighlights() {
             '</span><span class="trending-info"><strong>' +
             esc(item.title.split('/').pop() || item.title) +
             '</strong><span>' +
-            esc(item.title.split('/')[0] || 'GitHub') +
-            '</span></span><span class="trending-stars">' +
-            icon('star') +
-            compact.format(item.metricValue ?? 0) +
-            '</span></a>',
+            esc(item.summary) +
+            '</span><span>' +
+            esc(item.sourceName) +
+            ' · ' +
+            ui('页面创建 ') +
+            dateText(item.publishedAt) +
+            '</span></span></a>',
         )
         .join('')
-    : ui('<p class="empty-trending">开源榜暂未同步，稍后再来看看。</p>');
-  renderPaper(
-    featured?.id,
-    trending.map((i) => i.id),
-  );
+    : ui('<p class="empty-trending">近 30 天暂无新建工具，完整项目库仍可浏览。</p>');
+  renderPaper(featured?.id);
 }
 function renderResults() {
   get('#follow-active-tag').hidden = !tag;
@@ -434,7 +456,26 @@ function renderHealth() {
   notice.hidden = !stale;
   notice.innerHTML =
     icon('info') + '<span>' + ui('内容已超过 36 小时未更新，请留意发布时间。') + '</span>';
-  get('#updated-at').textContent = ui('更新于 ') + stamp(feed.generatedAt);
+  get('#updated-at').textContent = ui('快照生成于 ') + stamp(feed.generatedAt);
+  get('#source-list').innerHTML = feed.sources
+    .map(
+      (source) =>
+        '<div class="source-row"><div class="source-detail"><a href="' +
+        esc(source.homepage) +
+        '" target="_blank" rel="noopener noreferrer">' +
+        esc(source.name) +
+        '</a><span>' +
+        ui('最近成功同步：') +
+        stamp(source.lastSuccessAt) +
+        '</span>' +
+        (source.error ? '<span class="source-error">' + esc(source.error) + '</span>' : '') +
+        '</div><span class="source-status ' +
+        (source.status === 'ok' ? 'success' : 'error') +
+        '">' +
+        (source.status === 'ok' ? ui('同步正常') : ui('暂未同步')) +
+        '</span></div>',
+    )
+    .join('');
 }
 
 interface ArchiveDay {
@@ -443,6 +484,8 @@ interface ArchiveDay {
   stats: { items?: number };
 }
 interface ArchiveEdition {
+  selectionVersion?: number;
+  trending?: { title: string; url: string; sourceName: string }[];
   stats?: { items?: number };
   lead?: { title: string; url: string; sourceName: string }[];
 }
@@ -465,6 +508,7 @@ function loadArchive(date?: string) {
   const attempt = date
     ? fetchJson<ArchiveEdition>('/api/archive?date=' + encodeURIComponent(date)).then((edition) => {
         const lead = edition.lead || [];
+        const tools = edition.selectionVersion === 1 ? edition.trending || [] : [];
         box.innerHTML =
           ui('<button class="text-link" data-action="archive">返回往期列表</button>') +
           '<p class="archive-date">' +
@@ -485,7 +529,22 @@ function loadArchive(date?: string) {
                 )
                 .join('') +
               '</ol>'
-            : ui('<p class="dialog-empty">这一期没有留下要目。</p>'));
+            : ui('<p class="dialog-empty">这一期没有留下要目。</p>')) +
+          (tools.length
+            ? ui('<h3>近期工具发现</h3>') +
+              '<ol class="archive-lead">' +
+              tools
+                .map(
+                  (item) =>
+                    '<li><a href="' +
+                    esc(item.url) +
+                    '" target="_blank" rel="noopener noreferrer">' +
+                    esc(item.title) +
+                    '</a></li>',
+                )
+                .join('') +
+              '</ol>'
+            : '');
       })
     : (archiveDays
         ? Promise.resolve(archiveDays)
@@ -677,12 +736,8 @@ document.addEventListener('click', (event) => {
       renderResults();
       get('#china-filter').focus({ preventScroll: true });
       break;
-    case 'theme':
-      document.documentElement.dataset.theme =
-        document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      if (!writeStorage('signal-theme', document.documentElement.dataset.theme))
-        toast(ui('主题已切换；当前浏览器无法保存偏好。'));
-      syncTheme();
+    case 'sources':
+      get<HTMLDialogElement>('#sources-dialog').showModal();
       break;
     case 'archive':
       archiveDays = null; // every open re-reads, so today's edition shows up
@@ -850,13 +905,6 @@ document.querySelectorAll('dialog').forEach((dialog) => {
       dialog.close();
   });
 });
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
-  if (!['dark', 'light'].includes(readStorage('signal-theme') || '')) {
-    document.documentElement.dataset.theme = event.matches ? 'dark' : 'light';
-    syncTheme();
-  }
-});
-syncTheme();
 renderTabs();
 syncSaved();
 initMotion();
@@ -897,7 +945,7 @@ document.addEventListener('signal:language', () => {
     hour12: false,
   });
   renderEditionDate();
-  syncTheme();
+  theme.sync();
   renderResults();
   if (feed) {
     renderHealth();

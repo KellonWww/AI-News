@@ -3,9 +3,12 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   fetchText,
+  sourceCooldowns,
   normalizeGithub,
   normalizeHf,
   normalizeRss,
+  normalizeCommunity,
+  fetchHackerNews,
   mergeResults,
 } from './collector-core.mjs';
 import { validateFeed } from '../src/data.mjs';
@@ -13,6 +16,7 @@ import { validateFeed } from '../src/data.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const output = resolve(root, 'public/data/feed.json');
 const cache = resolve(root, '.cache/feed.json');
+const cooldownFile = resolve(root, '.cache/source-cooldowns.json');
 const now = new Date().toISOString();
 const recent = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 const ghQuery = (q) =>
@@ -39,14 +43,14 @@ const sources = [
     name: 'GitHub',
     homepage: 'https://github.com/topics/llm',
     kind: 'github',
-    url: ghQuery('topic:llm pushed:>=' + recent + ' archived:false fork:false stars:>50'),
+    url: ghQuery('topic:llm created:>=' + recent + ' archived:false fork:false stars:>50'),
   },
   {
     id: 'github-skills',
     name: 'GitHub Skills',
     homepage: 'https://github.com/topics/agent-skills',
     kind: 'github',
-    url: ghQuery('topic:agent-skills pushed:>=' + recent + ' archived:false fork:false stars:>5'),
+    url: ghQuery('topic:agent-skills created:>=' + recent + ' archived:false fork:false stars:>5'),
   },
   {
     id: 'github-apps',
@@ -54,7 +58,7 @@ const sources = [
     homepage: 'https://github.com/topics/gradio',
     kind: 'github',
     url: ghQuery(
-      'topic:gradio pushed:>=' +
+      'topic:gradio created:>=' +
         recent +
         ' archived:false fork:false stars:>50 -repo:gradio-app/gradio',
     ),
@@ -87,6 +91,59 @@ const sources = [
     kind: 'rss',
     url: 'https://github.blog/ai-and-ml/feed/',
   },
+  {
+    id: 'oschina',
+    name: '开源中国 · 技术资讯',
+    homepage: 'https://www.oschina.net/news',
+    kind: 'rss',
+    tech: true,
+    media: true,
+    url: 'https://www.oschina.net/news/rss',
+  },
+  {
+    id: 'hacker-news',
+    name: 'Hacker News · 社区讨论',
+    homepage: 'https://news.ycombinator.com',
+    kind: 'hn',
+    tech: true,
+    community: true,
+    url: 'https://hacker-news.firebaseio.com/v0/topstories.json',
+  },
+  {
+    id: 'lobsters',
+    name: 'Lobsters · 社区讨论',
+    homepage: 'https://lobste.rs',
+    kind: 'lobsters',
+    tech: true,
+    community: true,
+    url: 'https://lobste.rs/hottest.json',
+  },
+  {
+    id: 'v2ex-tech',
+    name: 'V2EX · 技术讨论',
+    homepage: 'https://www.v2ex.com/?tab=tech',
+    kind: 'rss',
+    tech: true,
+    community: true,
+    url: 'https://www.v2ex.com/feed/tab/tech.xml',
+  },
+  {
+    id: 'dev-community',
+    name: 'DEV Community · 技术文章',
+    homepage: 'https://dev.to',
+    kind: 'rss',
+    tech: true,
+    authorPosts: true,
+    url: 'https://dev.to/feed',
+  },
+  {
+    id: 'meituan-tech',
+    name: '美团技术团队 · 官方博客',
+    homepage: 'https://tech.meituan.com',
+    kind: 'rss',
+    tech: true,
+    url: 'https://tech.meituan.com/feed/',
+  },
 ];
 let previous = null;
 for (const path of [cache, output]) {
@@ -96,6 +153,18 @@ for (const path of [cache, output]) {
   } catch (error) {
     if (error.code !== 'ENOENT') console.warn('忽略无效快照：' + path);
   }
+}
+// Refuse a malformed safety state rather than silently discarding a source's cooldown.
+try {
+  const saved = JSON.parse(await readFile(cooldownFile, 'utf8'));
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) throw new Error('冷却状态无效');
+  for (const [host, state] of Object.entries(saved)) {
+    if (!state || !Number.isFinite(state.until) || ![403, 429].includes(state.status))
+      throw new Error('冷却状态无效');
+    if (state.until > Date.now()) sourceCooldowns.set(host, state);
+  }
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
 }
 const results = [];
 // Two API searches are sequential to avoid search endpoint burst limits.
@@ -110,22 +179,30 @@ for (const source of sources) {
             : {}),
         }
       : {};
-    const raw = await fetchText(source.url, { headers });
+    const raw = source.kind === 'hn' ? null : await fetchText(source.url, { headers });
     const items =
-      source.kind === 'rss'
-        ? normalizeRss(raw, source, now)
-        : source.kind.startsWith('github')
-          ? normalizeGithub(
-              source.kind === 'github-org' ? { items: JSON.parse(raw) } : JSON.parse(raw),
-              source,
-              now,
-            )
-          : normalizeHf(JSON.parse(raw), source, now);
+      source.kind === 'hn'
+        ? await fetchHackerNews(source, now)
+        : source.kind === 'lobsters'
+          ? normalizeCommunity(JSON.parse(raw), source, now)
+          : source.kind === 'rss'
+            ? normalizeRss(raw, source, now)
+            : source.kind.startsWith('github')
+              ? normalizeGithub(
+                  source.kind === 'github-org' ? { items: JSON.parse(raw) } : JSON.parse(raw),
+                  source,
+                  now,
+                )
+              : normalizeHf(JSON.parse(raw), source, now);
     if (!items.length) throw new Error('本次没有有效条目');
     results.push({ source, ok: true, items });
     console.log(source.id + ': ' + items.length + ' 条');
   } catch (error) {
     results.push({ source, ok: false, items: [], error: error.message });
+    // Persist immediately, even when all sources fail and no feed can be emitted.
+    await mkdir(dirname(cooldownFile), { recursive: true });
+    await writeFile(cooldownFile + '.tmp', JSON.stringify(Object.fromEntries(sourceCooldowns)));
+    await rename(cooldownFile + '.tmp', cooldownFile);
     console.warn(source.id + ': ' + error.message);
   }
 }

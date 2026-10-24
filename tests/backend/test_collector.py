@@ -377,3 +377,14 @@ class TestRunCollection:
         patch_fetch(monkeypatch, {'https://www.qbitai.com/feed': RSS})
         status = run(run_collection(env, only=['qbitai']))
         assert [s['id'] for s in status['sources']] == ['qbitai']
+
+
+def test_repository_discovery_uses_creation_window_not_push_activity():
+    from urllib.parse import parse_qs, urlsplit
+
+    sources = {source['id']: source for source in build_sources(NOW_MS)}
+    for key in ('github-projects', 'github-skills', 'github-apps'):
+        query = parse_qs(urlsplit(sources[key]['url']).query)['q'][0]
+        assert 'created:>=' in query
+        assert 'pushed:>=' not in query
+    assert 'sort=pushed' in sources['cn-official-deepseek-ai']['url']

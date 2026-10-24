@@ -16,7 +16,7 @@ CATEGORY_LABELS = {
     'models': '模型动态',
     'tips': '实用技巧',
     'apps': '趣味应用',
-    'dev': '开发实践',
+    'dev': '技术热点',
 }
 
 _STRIP_PARAMS = {'ref', 'source', 'fbclid', 'gclid'}

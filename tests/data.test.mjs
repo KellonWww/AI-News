@@ -344,3 +344,9 @@ test('GitHub demo discovery maps to apps independently of model availability', (
   assert.deepEqual(item.categories, ['apps']);
   assert.equal(item.metricValue, 123);
 });
+
+test('static collector searches for new repositories instead of old active ones', async () => {
+  const script = await readFile(new URL('../scripts/collect.mjs', import.meta.url), 'utf8');
+  assert.equal((script.match(/created:>=/g) || []).length, 3);
+  assert.ok(!script.includes('pushed:>='));
+});

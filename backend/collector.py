@@ -3,13 +3,19 @@
 Runs inside the Worker (cron or POST /api/sync). Outbound HTTP uses the
 runtime-provided `requests` on these cold paths only, never on /api/feed.
 """
+import asyncio
 import json
+import math
 import re
 import time
 import xml.etree.ElementTree as ET
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from db import chunk, db_all, db_batch, db_run, env_get, get_meta, multirow_insert, set_meta
+from collection_safety import (
+    COLLECTION_TIMEOUT_SECONDS, LOCK_TTL_MS, MANUAL_INTERVAL_MS, UPSTREAM_COOLDOWN_MS,
+    check_upstream, claim_window, cool_upstream, release_window, retry_seconds, window_end,
+)
 from topics import enrich_item, is_china_related, search_text
 from util import (
     canonical_url,
@@ -24,7 +30,7 @@ from util import (
 
 MAX_BYTES = 2 * 1024 * 1024
 USER_AGENT = 'Signal-AI-News/1.0 (+public-news-aggregator)'
-RETRYABLE_STATUS = {408, 429, 500, 502, 503, 504}
+RETRYABLE_STATUS = {408, 500, 502, 503, 504}
 DAY_MS = 86400000
 GLOBAL_ITEM_CAP = 500
 
@@ -67,14 +73,14 @@ def build_sources(now_ms=None):
             'name': 'GitHub',
             'homepage': 'https://github.com/topics/llm',
             'kind': 'github',
-            'url': _gh_query('topic:llm pushed:>=' + recent + ' archived:false fork:false stars:>50'),
+            'url': _gh_query('topic:llm created:>=' + recent + ' archived:false fork:false stars:>50'),
         },
         {
             'id': 'github-skills',
             'name': 'GitHub Skills',
             'homepage': 'https://github.com/topics/agent-skills',
             'kind': 'github',
-            'url': _gh_query('topic:agent-skills pushed:>=' + recent + ' archived:false fork:false stars:>5'),
+            'url': _gh_query('topic:agent-skills created:>=' + recent + ' archived:false fork:false stars:>5'),
         },
         {
             'id': 'github-apps',
@@ -82,7 +88,7 @@ def build_sources(now_ms=None):
             'homepage': 'https://github.com/topics/gradio',
             'kind': 'github',
             'url': _gh_query(
-                'topic:gradio pushed:>=' + recent + ' archived:false fork:false stars:>50 -repo:gradio-app/gradio'
+                'topic:gradio created:>=' + recent + ' archived:false fork:false stars:>50 -repo:gradio-app/gradio'
             ),
         },
         {
@@ -114,6 +120,20 @@ def build_sources(now_ms=None):
             'url': 'https://github.blog/ai-and-ml/feed/',
         },
     ]
+    sources += [
+        {'id': 'oschina', 'name': '开源中国 · 技术资讯', 'homepage': 'https://www.oschina.net/news',
+         'kind': 'rss', 'tech': True, 'media': True, 'url': 'https://www.oschina.net/news/rss'},
+        {'id': 'hacker-news', 'name': 'Hacker News · 社区讨论', 'homepage': 'https://news.ycombinator.com',
+         'kind': 'hn', 'tech': True, 'community': True, 'url': 'https://hacker-news.firebaseio.com/v0/topstories.json'},
+        {'id': 'lobsters', 'name': 'Lobsters · 社区讨论', 'homepage': 'https://lobste.rs',
+         'kind': 'lobsters', 'tech': True, 'community': True, 'url': 'https://lobste.rs/hottest.json'},
+        {'id': 'v2ex-tech', 'name': 'V2EX · 技术讨论', 'homepage': 'https://www.v2ex.com/?tab=tech',
+         'kind': 'rss', 'tech': True, 'community': True, 'url': 'https://www.v2ex.com/feed/tab/tech.xml'},
+        {'id': 'dev-community', 'name': 'DEV Community · 技术文章', 'homepage': 'https://dev.to',
+         'kind': 'rss', 'tech': True, 'authorPosts': True, 'url': 'https://dev.to/feed'},
+        {'id': 'meituan-tech', 'name': '美团技术团队 · 官方博客', 'homepage': 'https://tech.meituan.com',
+         'kind': 'rss', 'tech': True, 'url': 'https://tech.meituan.com/feed/'},
+    ]
     return sources
 
 
@@ -128,17 +148,20 @@ def source_order():
 
 
 class FetchError(Exception):
-    def __init__(self, message, retryable=True):
+    def __init__(self, message, retryable=True, status=None, cooldown_ms=0):
         super().__init__(message)
         self.retryable = retryable
+        self.status = status
+        self.cooldown_ms = cooldown_ms
 
 
 def _parse_retry_after(raw, fallback_ms):
     if not raw:
         return fallback_ms
     try:
-        return max(0, int(float(raw)) * 1000)
-    except ValueError:
+        seconds = float(raw)
+        return max(0, int(seconds * 1000)) if math.isfinite(seconds) else fallback_ms
+    except (ValueError, OverflowError):
         parsed = iso_date(raw)
         return max(0, epoch_ms(parsed) - int(time.time() * 1000)) if parsed else fallback_ms
 
@@ -183,6 +206,9 @@ async def fetch_text(url, headers=None, timeout=15, attempts=3, sleep=_default_s
             })
             status = int(response.status)
             if status != 200:
+                if status in (403, 429):
+                    cooldown_ms = _parse_retry_after(_header_get(response.headers, 'retry-after'), UPSTREAM_COOLDOWN_MS)
+                    raise FetchError('HTTP ' + str(status), False, status, max(UPSTREAM_COOLDOWN_MS, cooldown_ms))
                 retryable = status in RETRYABLE_STATUS
                 delay_ms = _parse_retry_after(_header_get(response.headers, 'retry-after'), delay_ms)
                 raise FetchError('HTTP ' + str(status), retryable and delay_ms <= 10000)
@@ -232,6 +258,61 @@ def _base(source, url, title, now, index):
         'metricPrev': None,
         'rankScore': max(0, 100 - index * 3),
     }
+
+
+_TECH_TOPIC = re.compile('\\b(php|java|javascript|typescript|python|rust|golang|go|zig|swift|kotlin|ruby|rails|react|vue|angular|svelte|node\\.?js|deno|bun|linux|unix|windows|android|ios|macos|docker|kubernetes|k8s|postgres\\w*|mysql|sqlite|redis|mongodb|sql|database|compiler|compilers|programming|software|developer|developers|coding|code|git|github|gitlab|open.source|api|sdk|npm|pypi|package|dependency|dependencies|security|vulnerability|cve|rce|webassembly|wasm|browser|browsers|cloud|server|servers|distributed|debugging|performance|benchmark|benchmarks|llm|llms|agent|agents|ai)\\b|开源|编程|开发|程序员|框架|数据库|编译|语言|漏洞|供应链|容器|云原生|中间件|运维|架构|故障|宕机|回滚|复盘|浏览器|许可证|模型|代码|算法|线程|内存|缓存|性能|内核|构建|依赖|版本|发布|升级|更新', re.I | re.ASCII)
+_TECH_NOISE = re.compile('决赛|大赛|入围|获奖|报名|征文|沙龙|直播预告|赞助|招商|生态合作|招聘|求职|找工作|求助|求推荐|求购|拼车|合租|转让|优惠码|邀请码|推广|抽奖|引流|\\b(hiring|who is hiring|ask hn:|satire|satirical)\\b', re.I | re.ASCII)
+_COMMUNITY_SUMMARY = '社区讨论线索，不等于官方确认；日期为帖子创建时间，原文与完整上下文见讨论页。'
+
+
+def keep_technical(title, summary='', tags=()):
+    tag_text = ' '.join(tags)
+    return not _TECH_NOISE.search(title + ' ' + tag_text) and bool(
+        _TECH_TOPIC.search(title + ' ' + summary + ' ' + tag_text)
+    )
+
+
+def normalize_community(payload, source, now):
+    if not isinstance(payload, list):
+        raise ValueError('社区返回无效数据')
+    result = []
+    for index, record in enumerate(payload[:30]):
+        if not isinstance(record, dict):
+            continue
+        hn = source['kind'] == 'hn'
+        rid = record.get('id')
+        if hn and (record.get('type') != 'story' or record.get('deleted') or record.get('dead')
+                   or type(rid) is not int or not 0 < rid <= 9007199254740991):
+            continue
+        raw_tags = record.get('tags')
+        tags = [t for t in raw_tags if isinstance(t, str)][:4] if isinstance(raw_tags, list) else []
+        summary = plain_text(record.get('text') if hn else record.get('description'))
+        if not keep_technical(plain_text(record.get('title')), summary, tags):
+            continue
+        url = 'https://news.ycombinator.com/item?id=' + str(rid) if hn else record.get('comments_url')
+        item = _base(source, url, record.get('title'), now, index)
+        if not item:
+            continue
+        if urlsplit(item['url']).hostname != ('news.ycombinator.com' if hn else 'lobste.rs'):
+            continue
+        value = record.get('created_at')
+        if hn:
+            seconds = record.get('time')
+            if type(seconds) not in (int, float) or not 0 < seconds < 8640000000000:
+                continue
+            value = now_iso(int(seconds * 1000))
+        published_at = date_within(value, now)
+        if not published_at or not epoch_ms(now) - 7 * DAY_MS <= epoch_ms(published_at) <= epoch_ms(now):
+            continue
+        score = record.get('score')
+        item.update({
+            'categories': ['dev'], 'tags': ['社区讨论'] + tags,
+            'summary': plain_text(summary, 140) + ' · ' + _COMMUNITY_SUMMARY if summary else _COMMUNITY_SUMMARY,
+            'publishedAt': published_at, 'metricLabel': 'points',
+            'metricValue': max(0, score) if type(score) in (int, float) else None,
+        })
+        result.append(item)
+    return result
 
 
 def normalize_github(payload, source, now):
@@ -371,20 +452,22 @@ def normalize_rss(text, source, now):
         summary_el = _first_child(entry, ('description', 'summary', 'content'))
         summary = plain_text(summary_el.text if summary_el is not None else '')
         text_for_rules = item['title'].lower()
-        categories = ['news']
-        if source['id'] == 'github-blog':
+        if source.get('tech') and not keep_technical(item['title'], summary):
+            continue
+        categories = ['dev'] if source.get('tech') else ['news']
+        if not source.get('tech') and source['id'] == 'github-blog':
             categories.append('dev')
-        if _TIPS_RE.search(text_for_rules):
+        if not source.get('tech') and _TIPS_RE.search(text_for_rules):
             categories.append('tips')
-        if _MODELS_RE.search(text_for_rules):
+        if not source.get('tech') and _MODELS_RE.search(text_for_rules):
             categories.append('models')
-        published_el = _first_child(entry, ('pubDate', 'published', 'updated'))
+        published_el = _first_child(entry, ('pubDate', 'published') if source.get('tech') else ('pubDate', 'published', 'updated'))
         published_at = date_within(published_el.text if published_el is not None else None, now)
         if published_at and epoch_ms(published_at) < epoch_ms(now) - 30 * DAY_MS:
             continue
         item['summary'] = summary or '查看来源原文，了解完整背景与细节。'
         item['categories'] = categories
-        item['tags'] = ['媒体报道'] if source.get('media') else ['官方博客']
+        item['tags'] = ['社区文章'] if source.get('authorPosts') else ['社区讨论'] if source.get('community') else ['媒体报道'] if source.get('media') else ['官方博客']
         item['publishedAt'] = published_at
         updated_el = _child(entry, 'updated')
         item['updatedAt'] = date_within(updated_el.text if updated_el is not None else None, now)
@@ -526,6 +609,15 @@ def _collect_headers(source, env):
 
 async def collect_source(env, source, now):
     """Fetch + normalize one source (cold paths only)."""
+    if source['kind'] == 'hn':
+        ids = parse_json(await fetch_text(source['url']))
+        if not isinstance(ids, list) or not ids or any(type(i) is not int or not 0 < i <= 9007199254740991 for i in ids):
+            raise ValueError('Hacker News 榜单无效')
+        records = []
+        # At most 39 subrequests including retries; failure retains the old source snapshot.
+        for rid in list(dict.fromkeys(ids))[:12]:
+            records.append(parse_json(await fetch_text('https://hacker-news.firebaseio.com/v0/item/' + str(rid) + '.json')))
+        return normalize_community(records, source, now)
     text = await fetch_text(source['url'], _collect_headers(source, env))
     kind = source['kind']
     if kind == 'rss':
@@ -536,6 +628,8 @@ async def collect_source(env, source, now):
         if kind == 'github-org' and isinstance(payload, list):
             payload = {'items': payload}
         return normalize_github(payload, source, now)
+    if kind == 'lobsters':
+        return normalize_community(payload, source, now)
     if kind == 'hf':
         return normalize_hf(payload, source, now)
     raise ValueError('未知源类型 ' + kind)
@@ -551,7 +645,28 @@ async def _select_sources(env, sources):
     return picks, (cursor + per_run) % len(sources)
 
 
-async def run_collection(env, only=None, allow_cursor=True, now_ms=None):
+async def run_collection(env, only=None, allow_cursor=True, now_ms=None, manual=False):
+    """Cron and authenticated manual sync share a cross-isolate lease."""
+    lease = await claim_window(env, 'collection_lock', LOCK_TTL_MS)
+    if lease is None:
+        return {'skipped': 'busy', 'retryAfter': retry_seconds(await window_end(env, 'collection_lock'))}
+    try:
+        if manual:
+            permit = await claim_window(env, 'manual_sync_limit', MANUAL_INTERVAL_MS)
+            if permit is None:
+                return {'skipped': 'rate_limited', 'retryAfter': retry_seconds(await window_end(env, 'manual_sync_limit'))}
+        # Bound the owner's lifetime below the lease TTL, including digest work.
+        return await asyncio.wait_for(
+            _run_collection(env, only, allow_cursor, now_ms), COLLECTION_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        print('collection alert: collection timed out')
+        return {'error': 'collection_timeout'}
+    finally:
+        await release_window(env, 'collection_lock', lease)
+
+
+async def _run_collection(env, only=None, allow_cursor=True, now_ms=None):
     """Entry point for cron and POST /api/sync (now_ms injectable for tests)."""
     now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
     now = now_iso(now_ms)
@@ -570,12 +685,21 @@ async def run_collection(env, only=None, allow_cursor=True, now_ms=None):
     ok_count = 0
     for source in sources:
         try:
+            until = await check_upstream(env, source['url'])
+            if until:
+                message = '源站冷却中，暂停至 ' + now_iso(until)
+                await mark_source_error(env, source, message)
+                results.append({'id': source['id'], 'ok': False, 'skipped': 'cooldown', 'error': message})
+                continue
             items = await collect_source(env, source, now)
             count = await write_source_success(env, source, items, now, now_ms)
             results.append({'id': source['id'], 'ok': True, 'count': count})
             ok_count += 1
         except Exception as error:  # noqa: BLE001 — one bad source must not kill the run
             message = str(error) or error.__class__.__name__
+            if isinstance(error, FetchError) and error.status in (403, 429):
+                until = await cool_upstream(env, source['url'], error.cooldown_ms, error.status)
+                message += '；暂停至 ' + now_iso(until)
             await mark_source_error(env, source, message)
             results.append({'id': source['id'], 'ok': False, 'error': message[:200]})
 
@@ -594,7 +718,7 @@ async def run_collection(env, only=None, allow_cursor=True, now_ms=None):
     status = {'ranAt': now, 'ok': ok_count, 'failed': len(sources) - ok_count, 'sources': results}
     await set_meta(env, 'sync_status', json.dumps(status, ensure_ascii=False, separators=(',', ':')))
     if cycle_complete:
-        # The 12-source cycle just wrapped (≈ Beijing 08:05): snapshot the
+        # The 18-source cycle just wrapped (≈ Beijing 08:05): snapshot the
         # front page, draft the editor's note, send the daily digest — each
         # step independently guarded inside run_digest.
         try:

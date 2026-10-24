@@ -19,8 +19,8 @@ def seed(d1, item_ts=NOW_MS):
     ))
     run(db_run(
         env,
-        "INSERT INTO items (id, title, url, source_id, source_name, collected_at, item_ts, rank_score) "
-        "VALUES ('i1', '标题甲', 'https://a/1', 'qbitai', '量子位', '2025-10-06T00:00:00.000Z', ?, 90)",
+        "INSERT INTO items (id, title, url, source_id, source_name, collected_at, published_at, item_ts, rank_score) "
+        "VALUES ('i1', '标题甲', 'https://a/1', 'qbitai', '量子位', '2025-10-06T00:00:00.000Z', '2025-10-06T00:00:00.000Z', ?, 90)",
         (item_ts,),
     ))
     return env
@@ -47,7 +47,7 @@ class TestRunDigest:
         payload = json.loads(rows[0]['payload'])
         assert payload['stats'] == {'items': 1, 'okSources': 1, 'totalSources': 1}
         assert payload['lead'][0]['title'] == '标题甲'
-        assert len(payload['lead']) == 1 and len(payload['trending']) == 1
+        assert len(payload['lead']) == 1 and payload['trending'] == []
 
         note = json.loads(run(get_meta(env, 'editor_note')))
         assert note == {'date': '2025-10-06', 'text': '今日看点：开源模型持续发力。'}
@@ -101,3 +101,35 @@ class TestRunDigest:
         monkeypatch.setattr(notify, 'send_daily_report', boom)
         status = run(digest.run_digest(env, NOW_MS))
         assert status['mail'] == {'ok': False, 'error': 'Resend HTTP 500: nope'}
+
+
+class TestEditorialDigest:
+    def test_old_repository_pushes_do_not_enter_archive_or_editor_note(self, d1, monkeypatch):
+        env = seed(d1)
+        run(db_run(env,
+            "INSERT INTO sources (id, name, homepage, status, item_count) "
+            "VALUES ('github-projects', 'GitHub', 'https://github.com', 'ok', 1)"))
+        run(db_run(
+            env,
+            "INSERT INTO items (id, title, url, source_id, source_name, collected_at, "
+            "published_at, updated_at, item_ts, rank_score) VALUES "
+            "('repo', 'Old popular repo', 'https://a/repo', 'github-projects', 'Source', "
+            "'2025-10-06T00:00:00.000Z', '2020-01-01T00:00:00.000Z', "
+            "'2025-10-06T00:00:00.000Z', ?, 100)",
+            (NOW_MS,),
+        ))
+        run(db_run(env, "INSERT INTO item_categories (item_id, category) VALUES ('repo', 'projects')"))
+        received = []
+
+        async def fake_note(env, titles):
+            received.extend(titles)
+            return 'Only dated news.'
+
+        monkeypatch.setattr(digest.ai_module, 'editor_note', fake_note)
+        status = run(digest.run_digest(env, NOW_MS))
+        assert status['snapshot']['ok'] is True
+        payload = json.loads(snapshot_row(env)[0]['payload'])
+        assert payload['selectionVersion'] == 1
+        assert [item['title'] for item in payload['lead']] == ['标题甲']
+        assert payload['trending'] == []
+        assert received == ['标题甲']

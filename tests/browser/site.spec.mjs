@@ -433,3 +433,226 @@ test('glass surfaces keep opaque article reading and both search entries work', 
   await expect(page.locator('.hero-subtitle')).toHaveText('From the world of AI,a daily dispatch.');
   await expect(page.locator('.section-number')).toHaveText('Your AI reading room');
 });
+
+test('edition separates recent stories from newly created tools and ignores old pushes', async ({
+  page,
+}) => {
+  const data = structuredClone(fixture);
+  const old = new Date(Date.now() - 90 * 86400000).toISOString();
+  data.items = [
+    {
+      ...fixture.items[0],
+      id: 'story',
+      title: 'Recent source-backed story',
+      url: 'https://example.com/story',
+    },
+    {
+      ...fixture.items[1],
+      id: 'new-tool',
+      title: 'org/new-tool',
+      url: 'https://example.com/new-tool',
+      publishedAt: now,
+    },
+    {
+      ...fixture.items[1],
+      id: 'old-tool',
+      title: 'Old popular repository',
+      url: 'https://example.com/old-tool',
+      publishedAt: old,
+      updatedAt: now,
+      metricValue: 999999,
+    },
+    {
+      ...fixture.items[0],
+      id: 'old-story',
+      title: 'Old story pushed today',
+      url: 'https://example.com/old-story',
+      publishedAt: old,
+      updatedAt: now,
+    },
+  ];
+  await mock(page, data);
+  await expect(page.locator('#featured')).toContainText('Recent source-backed story');
+  await expect(page.locator('#trending')).toContainText('new-tool');
+  await expect(page.locator('#trending')).not.toContainText('Old popular repository');
+  await expect(page.locator('#paper-list')).not.toContainText('Old story pushed today');
+  await expect(page.locator('#paper-foot')).toContainText('本期精选 2 条');
+  await expect(page.locator('.news-card')).toHaveCount(4);
+  await expect(page.locator('#featured .reader-guide')).toContainText('关注 AI 动态的读者');
+  await page.locator('#language-toggle').click();
+  await expect(page.locator('#featured .reader-guide')).toContainText('For readers following AI');
+  await expect(page.locator('#paper-foot')).toContainText('This edition: 2 picks');
+});
+
+test('stale-only editions are not padded while the full library remains readable', async ({
+  page,
+}) => {
+  const data = structuredClone(fixture);
+  data.items = data.items.map((item) => ({
+    ...item,
+    publishedAt: new Date(Date.now() - 90 * 86400000).toISOString(),
+    updatedAt: now,
+  }));
+  await mock(page, data);
+  await expect(page.locator('#featured')).toContainText('近 7 天没有可核实发布日期');
+  await expect(page.locator('#trending')).toContainText('近 30 天暂无新建工具');
+  await expect(page.locator('#paper-foot')).toContainText('本期精选 0 条');
+  await expect(page.locator('.news-card')).toHaveCount(12);
+});
+
+test('theme settings support system preference, explicit choices, and live system changes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await mock(page);
+  await page.locator('#theme-settings').click();
+  await expect(page.locator('[data-theme-choice="system"]')).toBeFocused();
+  await expect(page.locator('[data-theme-choice="system"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.locator('[data-theme-choice="dark"]').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('#theme-panel')).toBeHidden();
+  await expect(page.locator('#theme-settings')).toBeFocused();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.locator('#theme-settings').click();
+  await page.locator('[data-theme-choice="system"]').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  expect(await page.evaluate(() => localStorage.getItem('signal-theme'))).toBeNull();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.locator('#theme-settings').click();
+  await expect(page.locator('[data-theme-choice="system"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('theme panel supports keyboard navigation, escape, outside click, and focus dismissal', async ({
+  page,
+}) => {
+  await mock(page);
+  const settings = page.locator('#theme-settings');
+  await settings.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(settings).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Home');
+  await expect(page.locator('[data-theme-choice="dark"]')).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('[data-theme-choice="light"]')).toBeFocused();
+  await page.keyboard.press('End');
+  await expect(page.locator('[data-theme-choice="system"]')).toBeFocused();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('[data-theme-choice="dark"]')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#theme-panel')).toBeHidden();
+  await expect(settings).toBeFocused();
+  await settings.click();
+  await page.locator('#hero-title').click();
+  await expect(page.locator('#theme-panel')).toBeHidden();
+  await settings.click();
+  await page.locator('#language-toggle').focus();
+  await expect(page.locator('#theme-panel')).toBeHidden();
+});
+
+test('theme reveal starts at the toggle and cleans up after animation', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await mock(page);
+  await page.locator('#theme-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme-transition', 'true');
+  const reveal = await page.evaluate(() => {
+    const root = document.documentElement;
+    const bounds = document.querySelector('#theme-toggle').getBoundingClientRect();
+    return {
+      x: parseFloat(root.style.getPropertyValue('--theme-x')),
+      y: parseFloat(root.style.getPropertyValue('--theme-y')),
+      centerX: bounds.left + bounds.width / 2,
+      centerY: bounds.top + bounds.height / 2,
+      animation: getComputedStyle(root, '::view-transition-new(root)').animationName,
+    };
+  });
+  expect(reveal.x).toBeCloseTo(reveal.centerX, 0);
+  expect(reveal.y).toBeCloseTo(reveal.centerY, 0);
+  expect(reveal.animation).toBe('theme-reveal');
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme-transition');
+  await expect(page.locator('.theme-toggle-icon')).toHaveAttribute('data-mode', 'dark');
+  const meta = await page.evaluate(() => ({
+    actual: document.querySelector('meta[name="theme-color"]').content,
+    expected: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
+  }));
+  expect(meta.actual).toBe(meta.expected);
+});
+
+test('rapid theme toggles keep the final intent without runtime errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await mock(page);
+  await page.evaluate(() => {
+    const toggle = document.querySelector('#theme-toggle');
+    for (let i = 0; i < 7; i++) toggle.click();
+  });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme-transition');
+  expect(await page.evaluate(() => localStorage.getItem('signal-theme'))).toBe('dark');
+  await page.evaluate(() => {
+    const toggle = document.querySelector('#theme-toggle');
+    toggle.click();
+    toggle.click();
+  });
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme-transition');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(errors).toEqual([]);
+});
+
+test('theme switching falls back without View Transitions or with reduced motion', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await mock(page);
+  await page.evaluate(() => {
+    window.themeTransitionCalls = 0;
+    const start = document.startViewTransition.bind(document);
+    document.startViewTransition = (...args) => {
+      window.themeTransitionCalls++;
+      return start(...args);
+    };
+  });
+  await page.locator('#theme-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await page.evaluate(() => window.themeTransitionCalls)).toBe(0);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => {
+    document.startViewTransition = undefined;
+  });
+  await page.locator('#theme-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme-transition');
+});
+
+test('theme settings remain translated and usable when storage is blocked', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await mock(page);
+  await page.locator('#language-toggle').click();
+  await expect(page.locator('#theme-settings')).toHaveAttribute('aria-label', 'Theme settings');
+  await page.locator('#theme-settings').click();
+  await expect(page.locator('#theme-panel')).toContainText('Follow system');
+  await expect(page.locator('#theme-panel')).toContainText('Nightfall');
+  await page.evaluate(() => {
+    Storage.prototype.setItem = Storage.prototype.removeItem = () => {
+      throw new Error('blocked');
+    };
+  });
+  await page.locator('[data-theme-choice="dark"]').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('#toast')).toContainText('cannot save your preference');
+  await page.locator('#theme-settings').click();
+  await page.locator('[data-theme-choice="system"]').click();
+  await expect(page.locator('#toast')).toContainText('cannot save your preference');
+});
