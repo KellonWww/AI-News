@@ -315,3 +315,121 @@ test('editorial layout keeps the signal artwork, local font and responsive readi
     else expect(content.y).toBeGreaterThan(index.y + index.height);
   }
 });
+
+test('Ctrl+F opens centered site search and submits synchronized results', async ({ page }) => {
+  await mock(page);
+  await page.locator('#theme-toggle').focus();
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+  await page.keyboard.press('Control+f');
+  const dialog = page.locator('#search-dialog');
+  const input = page.locator('#search-modal-input');
+  await expect(dialog).toBeVisible();
+  await expect(input).toBeFocused();
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+  const box = await dialog.boundingBox();
+  const viewport = page.viewportSize();
+  expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(2);
+  await expect
+    .poll(async () => {
+      const centered = await dialog.boundingBox();
+      return Math.abs(centered.y + centered.height / 2 - viewport.height / 2);
+    })
+    .toBeLessThan(2);
+  await input.fill('Test signal 02');
+  await expect(page.locator('#search')).toHaveValue('Test signal 02');
+  await expect(page.locator('#search-feedback')).toContainText('1 条');
+  await page.keyboard.press('Control+f');
+  await expect(input).toHaveValue('Test signal 02');
+  expect(await input.evaluate((el) => el.selectionEnd - el.selectionStart)).toBe(14);
+  await page.keyboard.press('Enter');
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#search')).toBeFocused();
+  await expect(page.locator('.news-card')).toHaveCount(1);
+  await expect(page.locator('.news-card')).toContainText('Test signal 02');
+});
+
+test('search supports Command+F, empty results, Escape, backdrop and click entry', async ({
+  page,
+}) => {
+  await mock(page);
+  await page.locator('#search').fill('Test signal 02');
+  await page.keyboard.press('Meta+f');
+  const dialog = page.locator('#search-dialog');
+  const input = page.locator('#search-modal-input');
+  await expect(input).toHaveValue('Test signal 02');
+  await input.fill('no-matching-signal');
+  await expect(page.locator('#search-feedback')).toContainText('0 条');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#search')).toBeFocused();
+  await page.locator('.search-shortcut').click();
+  await expect(input).toHaveValue('no-matching-signal');
+  await input.fill('');
+  await expect(page.locator('#search-feedback')).toContainText('28 条');
+  await page.mouse.click(2, 2);
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('.search-shortcut')).toBeFocused();
+});
+
+test('modal search preserves filters and does not interrupt another dialog', async ({ page }) => {
+  await mock(page);
+  await page.locator('[data-category="skills"]').click();
+  await page.keyboard.press('Control+f');
+  await page.locator('#search-modal-input').fill('Test signal 02');
+  await expect(page.locator('#search-feedback')).toContainText('1 条');
+  await page.getByRole('button', { name: '关闭搜索', exact: true }).click();
+  await page.getByRole('button', { name: '清除筛选', exact: true }).click();
+  await page.keyboard.press('Control+f');
+  await expect(page.locator('#search-modal-input')).toHaveValue('');
+  await page.keyboard.press('Escape');
+  await page.locator('#account-button').click();
+  await expect(page.locator('#account-dialog')).toBeVisible();
+  await page.keyboard.press('Control+f');
+  await expect(page.locator('#search-dialog')).toBeHidden();
+  await expect(page.locator('#account-dialog')).toBeVisible();
+});
+
+test('site search dialog is translated and accessible in both themes', async ({ page }) => {
+  await mock(page);
+  await page.locator('#language-toggle').click();
+  await page.keyboard.press('Control+f');
+  await expect(page.getByRole('dialog', { name: 'Site search' })).toBeVisible();
+  await expect(page.locator('#search-modal-input')).toHaveAttribute(
+    'placeholder',
+    'Search projects, models, ideas…',
+  );
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((value) => {
+      document.documentElement.dataset.theme = value;
+    }, theme);
+    const result = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze();
+    expect(result.violations).toEqual([]);
+  }
+});
+
+test('glass surfaces keep opaque article reading and both search entries work', async ({
+  page,
+}) => {
+  await mock(page);
+  for (const selector of ['.site-header', '.discover-index', '.lens-surface']) {
+    const filter = await page
+      .locator(selector)
+      .evaluate((el) => getComputedStyle(el).backdropFilter);
+    expect(filter).toContain('blur(');
+  }
+  expect(
+    await page.locator('.discover-content').evaluate((el) => getComputedStyle(el).backdropFilter),
+  ).toBe('none');
+  await page.locator('.header-search').click();
+  await expect(page.locator('#search-modal-input')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.header-search')).toBeFocused();
+  await page.locator('.search-shortcut').click();
+  await expect(page.locator('#search-modal-input')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await page.locator('#language-toggle').click();
+  await expect(page.locator('.hero-subtitle')).toHaveText('From the world of AI,a daily dispatch.');
+  await expect(page.locator('.section-number')).toHaveText('Your AI reading room');
+});

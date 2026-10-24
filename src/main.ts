@@ -407,6 +407,7 @@ function renderResults() {
     (query ? ui('，搜索「') + query + (currentLanguage() === 'en' ? '”' : '」') : '') +
     (chinaOnly ? ui('，中国 AI 相关') : '') +
     (tag ? (currentLanguage() === 'en' ? ' / ' : '，') + tag : '');
+  get('#search-feedback').textContent = get('#result-count').textContent;
   const grid = get('#feed-grid');
   grid.setAttribute('aria-busy', 'false');
   grid.innerHTML = filtered.length
@@ -635,6 +636,7 @@ function reset() {
   savedOnly = false;
   limit = 12;
   get<HTMLInputElement>('#search').value = '';
+  get<HTMLInputElement>('#search-modal-input').value = '';
   get<HTMLSelectElement>('#time-filter').value = '0';
   get<HTMLSelectElement>('#sort').value = 'latest';
   renderResults();
@@ -760,15 +762,37 @@ document.addEventListener('click', (event) => {
         ?.focus({ preventScroll: true });
       break;
     }
+    case 'open-search':
+      openSearch();
+      break;
     case 'reset':
       reset();
       break;
   }
 });
-get<HTMLInputElement>('#search').addEventListener('input', (event) => {
-  query = (event.target as HTMLInputElement).value;
-  limit = 12;
-  renderResults();
+function openSearch() {
+  const dialog = get<HTMLDialogElement>('#search-dialog');
+  if (document.querySelector('dialog[open]') && !dialog.open) return;
+  const input = get<HTMLInputElement>('#search-modal-input');
+  input.value = query;
+  if (!dialog.open) dialog.showModal();
+  input.focus({ preventScroll: true });
+  input.select();
+}
+for (const selector of ['#search', '#search-modal-input']) {
+  get<HTMLInputElement>(selector).addEventListener('input', (event) => {
+    query = (event.target as HTMLInputElement).value;
+    get<HTMLInputElement>('#search').value = query;
+    get<HTMLInputElement>('#search-modal-input').value = query;
+    limit = 12;
+    renderResults();
+  });
+}
+get<HTMLFormElement>('#search-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  get<HTMLDialogElement>('#search-dialog').close();
+  scrollToDiscover();
+  get<HTMLInputElement>('#search').focus({ preventScroll: true });
 });
 get<HTMLSelectElement>('#time-filter').addEventListener('change', (event) => {
   days = Number((event.target as HTMLSelectElement).value);
@@ -781,6 +805,23 @@ get<HTMLSelectElement>('#sort').addEventListener('change', (event) => {
   renderResults();
 });
 document.addEventListener('keydown', (event) => {
+  if (event.isComposing || event.defaultPrevented) return;
+  if (event.key === 'Escape' && get<HTMLDialogElement>('#search-dialog').open) {
+    event.preventDefault();
+    get<HTMLDialogElement>('#search-dialog').close();
+    return;
+  }
+  if (
+    event.key.toLowerCase() === 'f' &&
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    (!document.querySelector('dialog[open]') || get<HTMLDialogElement>('#search-dialog').open)
+  ) {
+    event.preventDefault();
+    openSearch();
+    return;
+  }
   if (
     event.key === '/' &&
     !event.ctrlKey &&
@@ -789,7 +830,8 @@ document.addEventListener('keydown', (event) => {
     !document.querySelector('dialog[open]') &&
     !(event.target instanceof HTMLInputElement) &&
     !(event.target instanceof HTMLTextAreaElement) &&
-    !(event.target instanceof HTMLSelectElement)
+    !(event.target instanceof HTMLSelectElement) &&
+    !(event.target instanceof HTMLElement && event.target.isContentEditable)
   ) {
     event.preventDefault();
     get<HTMLInputElement>('#search').focus();

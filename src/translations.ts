@@ -1,5 +1,20 @@
 /** Developer-owned interface copy only. Feed content and user input are never translated. */
 export const english: Record<string, string> = {
+  '把注意力，留给值得的事': 'Give your attention to what matters',
+  'AI 世界的': 'From the world of AI,',
+  '每日来信。': 'a daily dispatch.',
+  '你的 AI 阅览室': 'Your AI reading room',
+  让好信号浮出水面: 'Bring the signal into focus',
+  '保持好奇，持续接收': 'Stay curious. Keep receiving.',
+  开源: 'Open source',
+  模型: 'Models',
+  灵感: 'Ideas',
+  打开站内搜索: 'Open site search',
+  站内搜索: 'Site search',
+  关闭搜索: 'Close search',
+  '输入关键词即时筛选，保留当前分类与筛选条件。':
+    'Search instantly within your current category and filters.',
+  查看搜索结果: 'View search results',
   '热度参考为榜单名次的归一化排序，不代表真实热度或今日增长。':
     'Popularity normalizes chart rankings. It does not measure overall popularity or daily growth.',
   '涨星最快按近期 stars 增量排序，仅适用于开源项目；其余内容排在后面。':

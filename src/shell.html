@@ -21,6 +21,15 @@
     </nav>
     <div class="header-actions">
       <button
+        class="header-search"
+        data-action="open-search"
+        aria-label="打开站内搜索"
+        aria-haspopup="dialog"
+        aria-controls="search-dialog"
+      >
+        {{icon:search}}<kbd>Ctrl / ⌘ F</kbd>
+      </button>
+      <button
         id="language-toggle"
         class="icon-button language-toggle"
         data-action="language"
@@ -52,11 +61,11 @@
   </div>
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <p class="hero-eyebrow">独立视角 · 每日精选</p>
-      <!-- avoid-ai-design-ignore: SD5 — signal. 是既有品牌字标，仅句点使用参考博客的主题强调色，不是标题关键词染色 -->
+      <p class="hero-eyebrow">把注意力，留给值得的事</p>
+      <!-- The wordmark is a small signature; the publication headline owns the hierarchy. -->
       <h1 id="hero-title">
         <span class="hero-wordmark">signal<span>.</span></span
-        ><span class="hero-subtitle">AI 世界的每日来信。</span>
+        ><span class="hero-subtitle">AI 世界的<br />每日来信。</span>
       </h1>
       <p class="hero-description">
         少一点噪声，多一点新知。<br />从开源灵感到下一代模型，捕捉值得留下的信号。
@@ -66,36 +75,88 @@
         ><span class="hero-note">保持好奇，每日更新</span>
       </div>
     </div>
-    <figure class="signal-art" aria-label="抽象信号天线插画">
-      <svg viewBox="0 0 480 440" fill="none" aria-hidden="true">
-        <defs>
-          <pattern id="signal-dots" width="24" height="24" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="currentColor" opacity=".25" />
-          </pattern>
-        </defs>
-        <path d="M40 410V220a200 200 0 0 1 400 0v190Z" fill="var(--soft)" />
-        <path d="M40 410V220a200 200 0 0 1 400 0v190Z" fill="url(#signal-dots)" />
-        <circle cx="240" cy="188" r="150" stroke="var(--line-strong)" stroke-dasharray="3 8" />
-        <path d="M240 188 124 390h232L240 188Z" fill="var(--accent)" />
-        <path d="M240 188v202M178 296h124M148 348h184" stroke="var(--bg)" stroke-width="3" />
-        <path
-          d="M197 145a61 61 0 0 0 0 86M283 145a61 61 0 0 1 0 86"
-          stroke="var(--accent)"
-          stroke-width="17"
-          stroke-linecap="round"
-        />
-        <path
-          d="M158 106a116 116 0 0 0 0 164M322 106a116 116 0 0 1 0 164"
-          stroke="var(--accent)"
-          stroke-width="10"
-          stroke-linecap="round"
-        />
-        <circle cx="240" cy="188" r="15" fill="var(--text)" />
-        <circle cx="385" cy="104" r="22" fill="var(--text)" />
-        <path d="M70 390h340" stroke="var(--text)" stroke-width="2" />
-        <path d="M95 65v24M83 77h24" stroke="var(--accent)" stroke-width="2" />
-      </svg>
-      <figcaption><span>NO HYPE, JUST SIGNAL.</span><span>持续接收中 ↗</span></figcaption>
+    <figure class="signal-art" aria-label="信号透镜：在纷杂信息中聚焦">
+      <div class="lens-surface">
+        <div class="lens-caption"><span class="live-dot"></span><span>让好信号浮出水面</span></div>
+        <svg viewBox="0 0 500 360" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient
+              id="lens-glass"
+              x1="80"
+              y1="40"
+              x2="430"
+              y2="340"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stop-color="var(--glass-highlight)" />
+              <stop offset=".5" stop-color="var(--lens)" stop-opacity=".3" />
+              <stop offset="1" stop-color="var(--glass-highlight)" />
+            </linearGradient>
+            <linearGradient
+              id="lens-rim"
+              x1="80"
+              y1="70"
+              x2="420"
+              y2="300"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stop-color="var(--glass-edge)" />
+              <stop offset=".5" stop-color="var(--lens-ink)" stop-opacity=".35" />
+              <stop offset="1" stop-color="var(--glass-edge)" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M40 180h420M250 26v308"
+            stroke="var(--line-strong)"
+            stroke-opacity=".3"
+            stroke-dasharray="2 7"
+          />
+          <ellipse
+            cx="250"
+            cy="180"
+            rx="198"
+            ry="89"
+            transform="rotate(-32 250 180)"
+            stroke="var(--lens-ink)"
+            stroke-opacity=".4"
+          />
+          <circle
+            cx="250"
+            cy="180"
+            r="139"
+            fill="url(#lens-glass)"
+            stroke="url(#lens-rim)"
+            stroke-width="2"
+          />
+          <circle cx="250" cy="180" r="118" stroke="var(--glass-edge)" stroke-width="1" />
+          <circle
+            cx="250"
+            cy="180"
+            r="97"
+            fill="url(#lens-glass)"
+            stroke="url(#lens-rim)"
+            stroke-width="12"
+          />
+          <circle cx="250" cy="180" r="75" stroke="var(--glass-edge)" stroke-opacity=".65" />
+          <path
+            d="M134 149a120 120 0 0 1 77-82M290 290a120 120 0 0 0 75-82"
+            stroke="var(--glass-edge)"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
+          <path
+            d="M215 205h26l25-50h27m-78 27h26l25-50h27"
+            stroke="var(--lens-ink)"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle cx="416" cy="76" r="7" fill="var(--lens-ink)" />
+          <circle cx="84" cy="284" r="4" fill="var(--lens-ink)" fill-opacity=".5" />
+        </svg>
+        <div class="lens-topics"><span>开源</span><span>模型</span><span>灵感</span></div>
+      </div>
+      <figcaption><span>NO HYPE, JUST SIGNAL.</span><span>保持好奇，持续接收</span></figcaption>
     </figure>
   </section>
   <div id="health-notice" class="health-notice" hidden></div>
@@ -119,7 +180,7 @@
   </section>
   <section id="discover" class="discover-section" aria-labelledby="discover-title">
     <aside class="discover-index">
-      <p class="section-number">01 / THE READING ROOM</p>
+      <p class="section-number">你的 AI 阅览室</p>
       <div class="discover-heading">
         <div>
           <!-- avoid-ai-design-ignore: SD5 — 句点是品牌 motif（signal.），与 logo、导航、页脚同一套系统 -->
@@ -153,6 +214,15 @@
             aria-label="搜索资讯"
           /><kbd>/</kbd></label
         >
+        <button
+          class="search-shortcut"
+          data-action="open-search"
+          aria-haspopup="dialog"
+          aria-controls="search-dialog"
+          aria-label="打开站内搜索"
+        >
+          <kbd>Ctrl / ⌘ F</kbd>
+        </button>
       </div>
       <div class="topic-toolbar" role="group" aria-label="关注主题">
         <span class="topic-caption">关注范围</span>
@@ -228,6 +298,30 @@
     <span id="updated-at">正在读取快照…</span><span>No hype, just signal.</span>
   </div>
 </footer>
+<dialog id="search-dialog" aria-labelledby="search-title" aria-describedby="search-hint">
+  <div class="dialog-heading">
+    <h2 id="search-title">站内搜索</h2>
+    <button class="icon-button" data-action="close-dialog" aria-label="关闭搜索">
+      {{icon:close}}
+    </button>
+  </div>
+  <p id="search-hint" class="dialog-intro">输入关键词即时筛选，保留当前分类与筛选条件。</p>
+  <form id="search-form" role="search">
+    <label class="search-box">
+      {{icon:search}}<input
+        id="search-modal-input"
+        type="search"
+        placeholder="搜索项目、模型、灵感…"
+        aria-label="搜索资讯"
+        autocomplete="off"
+        autofocus
+      />
+      <kbd>Esc</kbd>
+    </label>
+    <p id="search-feedback" class="dialog-intro" role="status" aria-live="polite"></p>
+    <button class="secondary-button" type="submit">查看搜索结果</button>
+  </form>
+</dialog>
 <dialog id="archive-dialog" aria-labelledby="archive-title">
   <div class="dialog-heading">
     <div>
