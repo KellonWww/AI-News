@@ -747,7 +747,7 @@ kbd {
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 16px;
   border-bottom: 1px solid var(--border);
-  padding: 26px 0;
+  padding: 30px 0;
   min-width: 0;
 }
 .card-top {
@@ -776,8 +776,8 @@ kbd {
   gap: 20px;
 }
 .card-title h3 {
-  font-size: 21px;
-  line-height: 1.5;
+  font-size: 23px;
+  line-height: 1.42;
   font-weight: 550;
   letter-spacing: -0.35px;
   overflow-wrap: anywhere;
@@ -790,9 +790,9 @@ kbd {
 .card-summary {
   grid-column: 1/-1;
   color: var(--secondary);
-  font-size: 13px;
-  line-height: 1.9;
-  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-top: 14px;
   overflow-wrap: anywhere;
 }
 .card-tags {
@@ -809,8 +809,8 @@ kbd {
   gap: 12px;
   align-items: center;
   margin-top: 18px;
-  font-size: 10px;
-  color: var(--muted);
+  font-size: 12px;
+  color: var(--secondary);
 }
 .source-name {
   display: inline-flex;
@@ -1699,18 +1699,19 @@ a {
     justify-content: flex-end;
   }
   .card-title h3 {
-    font-size: 21px;
+    font-size: 20px;
   }
   .news-card {
     display: block;
-    padding: 20px 0;
+    padding: 22px 0;
   }
   .metric-line {
     justify-content: flex-start;
     margin-top: 10px;
   }
   .card-summary {
-    font-size: 13px;
+    font-size: 14px;
+    line-height: 1.75;
   }
   .closing-note {
     gap: 14px;
@@ -1788,4 +1789,241 @@ a {
   background: var(--card);
   color: var(--text);
   transition: none;
+}
+
+/* Editorial reading pass: strengthen hierarchy without turning every item into a card. */
+.feed-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 4px 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+.feed-intro > div {
+  min-width: 0;
+}
+.feed-eyebrow {
+  margin-bottom: 7px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+.feed-intro h3 {
+  max-width: 18ch;
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 550;
+  line-height: 1.3;
+  letter-spacing: -0.75px;
+}
+.feed-intro > p {
+  max-width: 28ch;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.75;
+  text-align: right;
+}
+.feed-search {
+  margin-top: 22px;
+}
+.news-card {
+  margin-inline: -18px;
+  padding-inline: 18px;
+  border-radius: 12px;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+.news-card:hover,
+.news-card:focus-within {
+  background: var(--soft);
+}
+.card-top {
+  align-items: center;
+  margin-bottom: 10px;
+}
+.card-context,
+.source-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.card-context {
+  min-width: 0;
+  gap: 9px;
+}
+.meta-separator {
+  width: 18px;
+  height: 1px;
+  background: var(--line-strong);
+}
+.source-meta {
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.source-meta time {
+  color: var(--secondary);
+}
+.card-top .save-button {
+  width: 36px;
+  height: 36px;
+}
+.card-title h3 {
+  max-width: 34ch;
+  text-wrap: balance;
+}
+.card-title > .icon {
+  transition: transform 0.18s ease;
+}
+.news-card:hover .card-title > .icon,
+.news-card:focus-within .card-title > .icon {
+  transform: translate(2px, -2px);
+  color: var(--accent);
+}
+.card-summary,
+.reader-guide {
+  max-width: 72ch;
+}
+.reader-guide {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--soft) 72%, transparent);
+}
+.metric-line {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+.category-tab {
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.category-tab:not(.selected):hover,
+.category-tab:not(.selected):focus-visible {
+  color: var(--text);
+  background: var(--soft);
+}
+
+@media (max-width: 800px) {
+  .discover-index {
+    position: static;
+  }
+  .feed-intro {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 540px) {
+  .discover-section {
+    gap: 18px;
+    padding-top: 34px;
+  }
+  .discover-index {
+    margin-inline: -4px;
+    padding: 18px 0 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .discover-index .section-number,
+  .discover-index .index-description {
+    padding-inline: 4px;
+  }
+  .category-tabs {
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: 100%;
+    max-width: calc(100vw - 36px);
+    padding: 18px 4px 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    scroll-snap-type: inline proximity;
+  }
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .category-tab {
+    flex: 0 0 auto;
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    scroll-snap-align: start;
+  }
+  .category-tab.selected {
+    color: var(--button-text);
+    background: var(--ink-button);
+    border-color: var(--ink-button);
+    box-shadow: none;
+  }
+  .category-count {
+    display: none;
+  }
+  .discover-content {
+    padding: 20px 16px 0;
+  }
+  .feed-intro {
+    display: block;
+    padding-bottom: 18px;
+  }
+  .feed-intro h3 {
+    max-width: 15ch;
+    font-size: 25px;
+  }
+  .feed-intro > p {
+    max-width: 34ch;
+    margin-top: 8px;
+    text-align: left;
+  }
+  .feed-search {
+    margin-top: 16px;
+  }
+  .news-card {
+    margin-inline: -8px;
+    padding: 26px 8px;
+    border-radius: 8px;
+  }
+  .card-top {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .card-context {
+    gap: 7px;
+    padding-right: 4px;
+  }
+  .meta-separator {
+    width: 12px;
+  }
+  .source-meta {
+    font-size: 10px;
+  }
+  .card-title {
+    gap: 14px;
+  }
+  .card-title h3 {
+    max-width: none;
+    font-size: 21px;
+    line-height: 1.38;
+  }
+  .card-summary {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.72;
+  }
+  .reader-guide {
+    margin-block: 13px 4px;
+    padding: 9px 10px;
+    font-size: 11px;
+  }
+  .card-tags {
+    margin-top: 13px;
+  }
 }

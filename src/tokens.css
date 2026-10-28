@@ -12,7 +12,7 @@
   --hero: var(--bg);
   --hero-border: var(--border);
   --header: #fffdf5c9;
-  --ink-button: #a13e2b;
+  --ink-button: #245c78;
   --button-text: #ffffff;
   --feature: #f6dfc9;
   --focus: #12635c;
@@ -21,8 +21,8 @@
   --badge-green: #dbeccc;
   --blue: #12635c;
   --badge-blue: #d9ece8;
-  --purple: #8a3949;
-  --badge-purple: #f7e1e5;
+  --purple: #53629a;
+  --badge-purple: #e4e8f5;
   --amber: #80501c;
   --badge-amber: #f8e6bc;
   --notice: #f7efdd;
@@ -34,12 +34,12 @@
   --glass-highlight: #ffffffb8;
   --glass-shadow: 0 12px 40px #284e370c, inset 0 1px 0 #ffffffc9;
   --wash: #d5e7c2;
-  --lens: #f3b18c;
-  --lens-ink: #ad452c;
-  --contrast: #a13e2b;
-  --contrast-soft: #f9dfcf;
-  --contrast-edge: #dca48a;
-  --wash-warm: #f6d9bd;
+  --lens: #b9d9d5;
+  --lens-ink: #155e57;
+  --contrast: #245c78;
+  --contrast-soft: #dceaf0;
+  --contrast-edge: #9bbdca;
+  --wash-warm: #e8e4cf;
   --radius-s: 6px;
   --radius-m: 12px;
   --radius-l: 24px;
@@ -65,8 +65,8 @@
   --badge-green: #3c482d;
   --blue: #d4ed8d;
   --badge-blue: #304652;
-  --purple: #ffb6a8;
-  --badge-purple: #573d49;
+  --purple: #c7cffa;
+  --badge-purple: #3f4565;
   --amber: #f1dba5;
   --badge-amber: #403b30;
   --notice: #39372e;
@@ -78,10 +78,10 @@
   --glass-highlight: #dddfff14;
   --glass-shadow: 0 16px 48px #040f1829, inset 0 1px 0 #b5dcfa12;
   --wash: #3e456b;
-  --lens: #864e54;
-  --lens-ink: #ffb29f;
-  --contrast: #ffb29f;
-  --contrast-soft: #48343c;
-  --contrast-edge: #8d646c;
-  --wash-warm: #4a303e;
+  --lens: #315f67;
+  --lens-ink: #a9e2da;
+  --contrast: #9fd9ef;
+  --contrast-soft: #2d4350;
+  --contrast-edge: #557b8c;
+  --wash-warm: #343d55;
 }

@@ -233,15 +233,30 @@ function readerGuide(item: Item) {
 }
 function card(item: Item) {
   const primary = item.categories[0] ?? 'news';
+  const itemTimestamp = isResource(item) ? item.updatedAt || item.publishedAt : item.publishedAt;
+  const dateLabel = isResource(item)
+    ? ui('仓库 / 页面更新 ')
+    : item.tags.includes('社区讨论')
+      ? ui('讨论发布 ')
+      : ui('发布 ');
   return (
     '<article class="news-card" data-item-id="' +
     esc(item.id) +
-    '"><div class="card-top"><span class="category-badge badge-' +
+    '"><div class="card-top"><div class="card-context"><span class="category-badge badge-' +
     primary +
     '">' +
     icon(categoryIcons[primary]) +
     ui(labels[primary]) +
-    '</span>' +
+    '</span><span class="meta-separator" aria-hidden="true"></span><span class="source-meta"><span>' +
+    esc(item.sourceName) +
+    '</span><span aria-hidden="true">·</span><time datetime="' +
+    esc(itemTimestamp) +
+    '" title="' +
+    esc(stamp(itemTimestamp)) +
+    '">' +
+    dateLabel +
+    dateText(itemTimestamp) +
+    '</time></span></div>' +
     saveButton(item) +
     '</div><a class="card-title" href="' +
     esc(item.url) +
@@ -255,18 +270,7 @@ function card(item: Item) {
     readerGuide(item) +
     '<div class="card-tags">' +
     tagButtons(item) +
-    '</div><div class="card-bottom"><span title="' +
-    esc(stamp(isResource(item) ? item.updatedAt || item.publishedAt : item.publishedAt)) +
-    '">' +
-    esc(item.sourceName) +
-    ' · ' +
-    (isResource(item)
-      ? ui('仓库 / 页面更新 ')
-      : item.tags.includes('社区讨论')
-        ? ui('讨论发布 ')
-        : ui('发布 ')) +
-    dateText(isResource(item) ? item.updatedAt || item.publishedAt : item.publishedAt) +
-    '</span></div>' +
+    '</div>' +
     (item.metricValue !== null
       ? '<div class="metric-line">' +
         icon(item.metricLabel === 'stars' ? 'star' : 'bolt') +
