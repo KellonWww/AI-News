@@ -11,7 +11,6 @@ import {
   filterItems,
   growthDelta,
   isResource,
-  readingContext,
   selectEdition,
   validateFeed,
 } from './data.mjs';
@@ -221,16 +220,6 @@ function tagButtons(item: Item) {
     )
     .join('');
 }
-function readerGuide(item: Item) {
-  const context = readingContext(item);
-  return (
-    '<div class="reader-guide"><span>' +
-    esc(ui(context[0] || '')) +
-    '</span><p>' +
-    esc(ui(context[1] || '')) +
-    '</p></div>'
-  );
-}
 function card(item: Item) {
   const primary = item.categories[0] ?? 'news';
   const itemTimestamp = isResource(item) ? item.updatedAt || item.publishedAt : item.publishedAt;
@@ -267,7 +256,6 @@ function card(item: Item) {
     '</a><p class="card-summary">' +
     esc(item.summary) +
     '</p>' +
-    readerGuide(item) +
     '<div class="card-tags">' +
     tagButtons(item) +
     '</div>' +
@@ -348,7 +336,6 @@ function renderHighlights() {
       '</h2></a><p>' +
       esc(featured.summary) +
       '</p>' +
-      readerGuide(featured) +
       '<div class="card-tags">' +
       tagButtons(featured) +
       '</div><div class="feature-bottom"><span>' +

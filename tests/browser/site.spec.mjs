@@ -478,9 +478,9 @@ test('edition separates recent stories from newly created tools and ignores old 
   await expect(page.locator('#paper-list')).not.toContainText('Old story pushed today');
   await expect(page.locator('#paper-foot')).toContainText('本期精选 2 条');
   await expect(page.locator('.news-card')).toHaveCount(4);
-  await expect(page.locator('#featured .reader-guide')).toContainText('关注 AI 动态的读者');
+  await expect(page.locator('.reader-guide')).toHaveCount(0);
   await page.locator('#language-toggle').click();
-  await expect(page.locator('#featured .reader-guide')).toContainText('For readers following AI');
+  await expect(page.locator('.reader-guide')).toHaveCount(0);
   await expect(page.locator('#paper-foot')).toContainText('This edition: 2 picks');
 });
 
