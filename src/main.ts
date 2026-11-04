@@ -282,7 +282,7 @@ function card(item: Item) {
 function renderPaper(featuredId?: string) {
   if (!feed) return;
   get('#paper-stamp').textContent = feed.generatedAt
-    ? ui('付印 ') + stampTime.format(new Date(feed.generatedAt))
+    ? ui('快照 ') + stampTime.format(new Date(feed.generatedAt))
     : '';
   // textContent keeps AI-written copy inert; static snapshots simply stay hidden
   const note = get('#editor-note');
@@ -354,7 +354,7 @@ function renderHighlights() {
   } else {
     feature.innerHTML =
       ui(
-        '<span class="feature-eyebrow">近 7 天 · 动态精选</span><h2>好内容，值得等一等。</h2><p>近 7 天没有可核实发布日期的动态。历史内容仍可在下方浏览。</p><a class="feature-read" href="#discover">发现更多 ',
+        '<span class="feature-eyebrow">近 7 天 · 动态精选</span><h2>暂无近期动态</h2><p>近 7 天没有可核实发布日期的动态。历史内容仍可在下方浏览。</p><a class="feature-read" href="#discover">浏览全部资讯 ',
       ) +
       icon('arrow') +
       '</a>';
@@ -363,12 +363,10 @@ function renderHighlights() {
   get('#trending').innerHTML = trending.length
     ? trending
         .map(
-          (item, index) =>
+          (item) =>
             '<a class="trending-item" href="' +
             esc(item.url) +
-            '" target="_blank" rel="noopener noreferrer"><span class="rank">0' +
-            (index + 1) +
-            '</span><span class="trending-info"><strong>' +
+            '" target="_blank" rel="noopener noreferrer"><span class="trending-info"><strong>' +
             esc(item.title.split('/').pop() || item.title) +
             '</strong><span>' +
             esc(item.summary) +
@@ -411,12 +409,11 @@ function renderResults() {
     savedOnly,
     saved,
   }) as Item[];
-  get('#discover-title').innerHTML =
-    (savedOnly ? ui('我的收藏') : ui('发现新鲜事')) + '<span class="heading-dot">.</span>';
+  get('#discover-title').textContent = savedOnly ? ui('我的收藏') : ui('全部资讯');
   get('#result-count').textContent =
     (savedOnly ? ui('收藏，') : '') +
     filtered.length +
-    ui(' 条值得探索的信号') +
+    ui(' 条结果') +
     (query ? ui('，搜索「') + query + (currentLanguage() === 'en' ? '”' : '」') : '') +
     (chinaOnly ? ui('，中国 AI 相关') : '') +
     (tag ? (currentLanguage() === 'en' ? ' / ' : '，') + tag : '');
@@ -428,11 +425,9 @@ function renderResults() {
     : '<div class="empty-state">' +
       icon(savedOnly ? 'bookmark' : 'search') +
       '<h3>' +
-      (savedOnly ? ui('还没有符合条件的收藏') : ui('暂时没有找到这条信号')) +
+      (savedOnly ? ui('还没有符合条件的收藏') : ui('没有匹配的资讯')) +
       '</h3><p>' +
-      (savedOnly
-        ? ui('点击卡片右上角的书签，把感兴趣的内容留给以后。')
-        : ui('试试其他关键词或分类。')) +
+      (savedOnly ? ui('点击文章旁的书签即可收藏。') : ui('试试其他关键词或分类。')) +
       ui(
         '</p><button class="secondary-button" data-action="reset">清除筛选，查看全部</button></div>',
       );

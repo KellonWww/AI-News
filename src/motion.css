@@ -13,23 +13,6 @@
 .site-header.is-scrolled {
   border-bottom-color: var(--line-strong);
 }
-.signal-art svg {
-  transition: translate 0.35s ease-out;
-}
-@media (hover: hover) and (pointer: fine) {
-  .hero.pointer-active .signal-art svg {
-    translate: calc(var(--hero-x, 0px) * 0.12) calc(var(--hero-y, 0px) * 0.12);
-  }
-  .news-card:hover .card-title {
-    color: var(--accent);
-  }
-  .news-card:hover .card-title > .icon {
-    translate: 2px -2px;
-  }
-}
-.card-title > .icon {
-  transition: translate 0.2s;
-}
 dialog[open] {
   animation: dialog-enter 0.2s ease-out;
 }
@@ -47,8 +30,5 @@ dialog[open] {
   *::after {
     animation: none !important;
     transition: none !important;
-  }
-  .signal-art svg {
-    translate: none !important;
   }
 }

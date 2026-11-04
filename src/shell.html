@@ -9,7 +9,7 @@
     <nav class="top-nav" aria-label="主导航">
       <a href="#discover" class="nav-link active">发现</a
       ><button class="nav-link" data-action="saved" aria-pressed="false">
-        我的收藏 <span id="saved-count">0</span></button
+        {{icon:bookmark}}我的收藏 <span id="saved-count">0</span></button
       ><!-- 云端版专属入口（静态快照模式保持隐藏） --><button
         class="nav-link"
         id="nav-archive"
@@ -39,7 +39,6 @@
       >
         EN
       </button>
-      <button id="account-button" class="account-trigger" aria-haspopup="dialog">我的账户</button>
       <button class="icon-button mobile-saved" data-action="saved" aria-label="查看我的收藏">
         {{icon:bookmark}}</button
       ><span class="header-rule"></span>
@@ -81,7 +80,8 @@
           </button>
         </div>
         <div class="theme-panel" id="theme-panel" role="group" aria-label="选择主题" hidden>
-          <p class="theme-group-label">阅读的两种光线</p>
+          <p class="theme-group-label">阅读主题</p>
+          <!-- avoid-ai-design-ignore: SD7 — 色点用于预览真实主题配色，不是仿窗口装饰。 -->
           <button type="button" class="theme-option" data-theme-choice="dark" aria-pressed="false">
             <span class="theme-dots" data-palette="dark" aria-hidden="true"
               ><i></i><i></i><i></i></span
@@ -103,13 +103,12 @@
         </div>
       </div>
     </div>
+    <button id="account-button" class="account-trigger" aria-haspopup="dialog">我的账户</button>
   </div>
 </header>
 <main class="page-shell">
   <div class="edition-line">
-    <span class="edition"
-      ><span class="live-dot"></span> THE DAILY SIGNAL <span class="edition-slash">/</span>
-      <span id="edition-date"></span></span
+    <span class="edition"><span>浏览日期</span> <span id="edition-date"></span></span
     ><button
       class="edition-status"
       id="edition-status"
@@ -117,109 +116,13 @@
       aria-haspopup="dialog"
       aria-controls="sources-dialog"
     >
-      正在连接今日灵感
+      正在读取来源状态…
     </button>
   </div>
   <section class="hero" aria-labelledby="hero-title">
-    <div class="hero-copy">
-      <p class="hero-eyebrow">把注意力，留给值得的事</p>
-      <!-- The wordmark is a small signature; the publication headline owns the hierarchy. -->
-      <h1 id="hero-title">
-        <span class="hero-wordmark">signal<span>.</span></span
-        ><span class="hero-subtitle">AI 世界的<br />每日来信。</span>
-      </h1>
-      <p class="hero-description">
-        少一点噪声，多一点新知。<br />先读近期动态，再找能用的工具；每期最多 10
-        条，不拿旧项目更新充新闻。
-      </p>
-      <div class="hero-cta">
-        <a href="#discover" class="primary-button">开始阅读 {{icon:arrow}}</a
-        ><span class="hero-note">保持好奇，每日更新</span>
-      </div>
-    </div>
-    <figure class="signal-art" aria-label="信号透镜：在纷杂信息中聚焦">
-      <div class="lens-surface">
-        <div class="lens-caption"><span class="live-dot"></span><span>让好信号浮出水面</span></div>
-        <svg viewBox="0 0 500 360" fill="none" aria-hidden="true">
-          <defs>
-            <linearGradient
-              id="lens-glass"
-              x1="80"
-              y1="40"
-              x2="430"
-              y2="340"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop stop-color="var(--glass-highlight)" />
-              <stop offset=".5" stop-color="var(--lens)" stop-opacity=".3" />
-              <stop offset="1" stop-color="var(--glass-highlight)" />
-            </linearGradient>
-            <linearGradient
-              id="lens-rim"
-              x1="80"
-              y1="70"
-              x2="420"
-              y2="300"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop stop-color="var(--glass-edge)" />
-              <stop offset=".5" stop-color="var(--lens-ink)" stop-opacity=".35" />
-              <stop offset="1" stop-color="var(--glass-edge)" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M40 180h420M250 26v308"
-            stroke="var(--line-strong)"
-            stroke-opacity=".3"
-            stroke-dasharray="2 7"
-          />
-          <ellipse
-            cx="250"
-            cy="180"
-            rx="198"
-            ry="89"
-            transform="rotate(-32 250 180)"
-            stroke="var(--lens-ink)"
-            stroke-opacity=".4"
-          />
-          <circle
-            cx="250"
-            cy="180"
-            r="139"
-            fill="url(#lens-glass)"
-            stroke="url(#lens-rim)"
-            stroke-width="2"
-          />
-          <circle cx="250" cy="180" r="118" stroke="var(--glass-edge)" stroke-width="1" />
-          <circle
-            cx="250"
-            cy="180"
-            r="97"
-            fill="url(#lens-glass)"
-            stroke="url(#lens-rim)"
-            stroke-width="12"
-          />
-          <circle cx="250" cy="180" r="75" stroke="var(--glass-edge)" stroke-opacity=".65" />
-          <path
-            d="M134 149a120 120 0 0 1 77-82M290 290a120 120 0 0 0 75-82"
-            stroke="var(--glass-edge)"
-            stroke-width="3"
-            stroke-linecap="round"
-          />
-          <path
-            d="M215 205h26l25-50h27m-78 27h26l25-50h27"
-            stroke="var(--lens-ink)"
-            stroke-width="8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-          <circle cx="416" cy="76" r="7" fill="var(--lens-ink)" />
-          <circle cx="84" cy="284" r="4" fill="var(--lens-ink)" fill-opacity=".5" />
-        </svg>
-        <div class="lens-topics"><span>开源</span><span>模型</span><span>灵感</span></div>
-      </div>
-      <figcaption><span>NO HYPE, JUST SIGNAL.</span><span>保持好奇，持续接收</span></figcaption>
-    </figure>
+    <h1 id="hero-title">AI 日报</h1>
+    <p class="hero-description">近期动态与新建工具分开读，每期最多 10 条精选。</p>
+    <a href="#discover" class="text-link">浏览全部资讯</a>
   </section>
   <div id="health-notice" class="health-notice" hidden></div>
   <p class="edition-policy">
@@ -246,13 +149,10 @@
   </section>
   <section id="discover" class="discover-section" aria-labelledby="discover-title">
     <aside class="discover-index">
-      <p class="section-number">你的 AI 阅览室</p>
       <div class="discover-heading">
         <div>
-          <!-- avoid-ai-design-ignore: SD5 — 句点是品牌 motif（signal.），与 logo、导航、页脚同一套系统 -->
-          <h2 id="discover-title">发现新鲜事<span class="heading-dot">.</span></h2>
+          <h2 id="discover-title">全部资讯</h2>
         </div>
-        <p class="index-description">大事、小事、新鲜事。<br />在快速变化里，找到你的关注。</p>
       </div>
       <div class="filter-bar">
         <div id="categories" class="category-tabs" role="group" aria-label="资讯分类"></div>
@@ -271,19 +171,12 @@
       </aside>
     </aside>
     <div class="discover-content">
-      <header class="feed-intro">
-        <div>
-          <p class="feed-eyebrow">资讯索引</p>
-          <h3>按你的节奏，读完今天的信号。</h3>
-        </div>
-        <p>先看来源与时间，再决定是否展开原文。</p>
-      </header>
       <div class="feed-search">
         <label class="search-box"
           >{{icon:search}}<input
             id="search"
             type="search"
-            placeholder="搜索项目、模型、灵感…"
+            placeholder="搜索标题、简介或标签…"
             autocomplete="off"
             aria-label="搜索资讯"
           /><kbd>/</kbd></label
@@ -308,7 +201,6 @@
           关注此标签
         </button>
         <button id="clear-filters" class="text-link" data-action="reset" hidden>清除筛选</button>
-        <span class="topic-hint">按品牌与内容重点探索，点击文章标签聚合阅读</span>
       </div>
       <div class="results-toolbar">
         <p id="result-count" role="status" aria-live="polite">正在加载资讯…</p>
@@ -349,16 +241,9 @@
       </div>
       <div class="load-more-wrap">
         <button id="load-more" class="secondary-button" data-action="more" hidden>
-          再看一些 {{icon:chevron}}</button
-        ><span id="end-note" class="end-note" hidden>你已经捕捉到这一期的全部信号。</span>
+          加载更多 {{icon:chevron}}</button
+        ><span id="end-note" class="end-note" hidden>已显示全部结果。</span>
       </div>
-    </div>
-  </section>
-  <section class="closing-note">
-    <span class="closing-icon">{{icon:globe}}</span>
-    <div>
-      <h3>好信息，不该有门槛。</h3>
-      <p>精选值得关注的 AI 动态与实用灵感，少一点噪声，多一点新知。</p>
     </div>
   </section>
 </main>
@@ -366,10 +251,10 @@
   <div class="footer-inner">
     <a class="brand footer-brand" href="./"
       ><span class="brand-mark">{{logo}}</span><span>signal.</span></a
-    ><span>保持好奇，明天见。</span><span>每日精选，持续更新</span>
+    ><button class="text-link" data-action="sources">关于与来源</button>
   </div>
   <div class="footer-fine">
-    <span id="updated-at">正在读取快照…</span><span>No hype, just signal.</span>
+    <span id="updated-at">正在读取快照…</span>
   </div>
 </footer>
 <dialog id="sources-dialog" aria-labelledby="sources-title">
@@ -397,7 +282,7 @@
       {{icon:search}}<input
         id="search-modal-input"
         type="search"
-        placeholder="搜索项目、模型、灵感…"
+        placeholder="搜索标题、简介或标签…"
         aria-label="搜索资讯"
         autocomplete="off"
         autofocus
