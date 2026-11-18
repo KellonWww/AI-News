@@ -1,6 +1,6 @@
-"""Cycle-wrap digest: daily snapshot → editor's note → email.
+"""Scheduled digest: daily snapshot → editor's note → email.
 
-Fires once per 18-source cycle wrap (≈ Beijing 08:05). Each step is
+Fires from the Beijing 09:05 cron slot, after the final 08:05 collection run. Each step is
 independently guarded: a broken snapshot must not cost the email, and a
 broken email must never look like a collection failure.
 """

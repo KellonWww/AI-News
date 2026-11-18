@@ -142,8 +142,8 @@ export const english: Record<string, string> = {
   '最近成功：': 'Last successful sync: ',
   暂未同步: 'Not synced',
   条已同步: 'items synced',
-  '第一期还没付印；明早 08:05 后再来。':
-    'The first edition is not ready. Check back after 08:05 Beijing time tomorrow.',
+  '第一期还没付印；明早 09:05 后再来。':
+    'The first edition is not ready. Check back after 09:05 Beijing time tomorrow.',
   '条 · 付印': 'items / Published',
   返回往期列表: 'Back to editions',
   '这一期没有留下要目。': 'No headlines were archived for this edition.',
@@ -318,8 +318,8 @@ export const english: Record<string, string> = {
     'This reloads the available snapshot; it does not trigger remote collection.',
   往期报纸: 'Past editions',
   关闭往期面板: 'Close editions panel',
-  '每天 08:05 付印的头版存档，保留最近 90 期。':
-    'Front pages published daily at 08:05 Beijing time. The latest 90 editions are retained.',
+  '每天 09:05 付印的头版存档，保留最近 90 期。':
+    'Front pages published daily at 09:05 Beijing time. The latest 90 editions are retained.',
   编辑部统计: 'From the editorial desk',
   关闭统计面板: 'Close statistics panel',
   '近 30 天出刊条数，以及当前快照里的信号分布。':

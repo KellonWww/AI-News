@@ -1,4 +1,4 @@
-"""digest — snapshot, editor note, and failure isolation at cycle wrap."""
+"""digest — scheduled snapshot, editor note, and failure isolation."""
 import json
 
 import digest

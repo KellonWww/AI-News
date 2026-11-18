@@ -14,6 +14,9 @@ from pyodide.ffi import to_js
 from api import handle_api
 from auth import handle_account_request
 
+COLLECTION_CRON = '5 7-23,0 * * *'
+DIGEST_CRON = '5 1 * * *'
+
 _INTERNAL_ERROR = {
     'status': 500,
     'headers': [('Content-Type', 'application/json; charset=utf-8'), ('Cache-Control', 'no-store')],
@@ -101,9 +104,22 @@ class Default(WorkerEntrypoint):
             return build_response(_INTERNAL_ERROR, 'GET')
 
     async def scheduled(self, controller, env=None, ctx=None):
-        # One source per invocation via the COLLECT_SOURCES_PER_RUN cursor
-        # (free-plan CPU cap); 18 hourly cron runs roll all 18 sources daily.
-        from collector import run_collection
-
+        """Route collection and digest cron triggers without coupling their state."""
         env = env if env is not None else self.env
-        await run_collection(env, allow_cursor=True)
+        cron = str(controller.cron)
+
+        if cron == COLLECTION_CRON:
+            # One source per invocation; 18 hourly runs cover all 18 sources.
+            from collector import run_collection
+
+            await run_collection(env, allow_cursor=True)
+            return
+
+        if cron == DIGEST_CRON:
+            # 01:05 UTC = 09:05 Beijing, one hour after the final collection slot.
+            from digest import run_digest
+
+            await run_digest(env, int(controller.scheduledTime))
+            return
+
+        print('unknown cron trigger:', cron)

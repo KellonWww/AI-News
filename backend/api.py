@@ -18,7 +18,7 @@ _BASE_HEADERS = [
     ('Content-Type', 'application/json; charset=utf-8'),
     ('X-Content-Type-Options', 'nosniff'),
 ]
-SCHEDULE = '5 7-23,0 * * * (UTC; 18 runs/day, 1 source/run; digest on cursor wrap)'
+SCHEDULE = 'Collection: 5 7-23,0 * * * UTC; digest: 5 1 * * * UTC (09:05 Beijing)'
 COLLECTION = 'Cloudflare Worker (Python) → D1'
 DAY_MS = 86400000
 
@@ -273,7 +273,7 @@ async def handle_sync(req, env):
         return error_response('Forbidden', 403, [NO_STORE])
     from collector import run_collection
 
-    # Free-plan CPU cap: manual sync follows the same cursor batching as cron.
+    # Free-plan CPU cap: manual sync batches independently from the cron cursor.
     status = await run_collection(env, allow_cursor=True, manual=True)
     if status.get('skipped'):
         code = 409 if status['skipped'] == 'busy' else 429

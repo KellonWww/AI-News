@@ -29,7 +29,7 @@
 
 ~~~mermaid
 flowchart LR
-  A[免费 API / RSS<br/>国内外 AI 来源] --> B[Python Worker<br/>Cron 每小时滚动采集 1 源<br/>北京时间 08:05 轮完 12 源]
+  A[免费 API / RSS<br/>国内外 AI 来源] --> B[Python Worker<br/>北京时间 15:05—次日 08:05<br/>每小时采集 1 源；09:05 独立生成日报]
   B -->|每次 1 源·分批写入| C[(Cloudflare D1<br/>文章 + 用户数据)]
   C --> D[Worker API<br/>/api/feed /api/items]
   E[Workers Static Assets<br/>前端页面] --> D
@@ -38,7 +38,7 @@ flowchart LR
 
 2026-10-04 起，后端重写为 Python Worker：采集、文章数据、用户系统全部入 D1，不再依赖 KV / Durable Objects / GitHub Actions 采集。
 免费版 CPU 限额（10ms/次）通过「每次 Cron 只采 1 个源 + 出网走原生 fetch FFI（不 import requests）」适配；一次 CPU 超限即重新部署可恢复。
-手动同步：`POST /api/sync`（请求头 `X-Admin-Token`），与 Cron 走同样的游标分批。
+手动同步：`POST /api/sync`（请求头 `X-Admin-Token`），使用独立游标分批，不推进 Cron 游标。
 GitHub Pages 原站与工作流保留，作为免费静态镜像。
 
 ## 截图真实性说明

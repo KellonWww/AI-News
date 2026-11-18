@@ -1,4 +1,4 @@
-"""notify — daily digest composition, Resend call, and cycle-wrap wiring."""
+"""notify — daily digest composition and collection cursor isolation."""
 import json
 
 import pytest
@@ -6,7 +6,7 @@ import pytest
 import collector
 import notify
 from conftest import make_env, run
-from db import db_run, set_meta
+from db import db_run, get_meta, set_meta
 
 NOW_MS = 1759737600000  # 2025-10-06T08:00:00Z → Beijing 10-06 16:00
 
@@ -220,8 +220,8 @@ class TestSendDailyReport:
         assert '编者按' not in body['text']
 
 
-class TestCycleWrapWiring:
-    def _stub(self, monkeypatch):
+class TestCollectionCursorIsolation:
+    def _stub_collection(self, monkeypatch):
         async def fake_collect(env, source, now):
             return []
 
@@ -230,44 +230,41 @@ class TestCycleWrapWiring:
 
         monkeypatch.setattr(collector, 'collect_source', fake_collect)
         monkeypatch.setattr(collector, 'write_source_success', fake_write)
-        sent = []
 
-        async def fake_report(env, now_ms=None):
-            sent.append(now_ms)
-            return {'ok': True, 'stub': True}
-
-        monkeypatch.setattr(notify, 'send_daily_report', fake_report)
-        return sent
-
-    def _run_at_cursor(self, d1, cursor):
+    def test_cron_wrap_only_advances_cron_cursor(self, d1, monkeypatch):
+        self._stub_collection(monkeypatch)
         env = make_env(d1, COLLECT_SOURCES_PER_RUN='1')
 
         async def scenario():
-            await set_meta(env, 'collect_cursor', cursor)
-            return await collector.run_collection(env, allow_cursor=True, now_ms=NOW_MS)
+            await set_meta(env, 'collect_cursor', '17')
+            await set_meta(env, 'manual_collect_cursor', '5')
+            status = await collector.run_collection(env, allow_cursor=True, now_ms=NOW_MS)
+            return (
+                status,
+                await get_meta(env, 'collect_cursor'),
+                await get_meta(env, 'manual_collect_cursor'),
+            )
 
-        return env, run(scenario())
-
-    def test_wrap_sends_once(self, d1, monkeypatch):
-        sent = self._stub(monkeypatch)
-        _, status = self._run_at_cursor(d1, '11')
-        assert len(sent) == 1
-        assert sent[0] == NOW_MS
-        assert status['mail'] == {'ok': True, 'stub': True}
-
-    def test_mid_cycle_does_not_send(self, d1, monkeypatch):
-        sent = self._stub(monkeypatch)
-        _, status = self._run_at_cursor(d1, '5')
-        assert sent == []
+        status, cron_cursor, manual_cursor = run(scenario())
+        assert cron_cursor == '0'
+        assert manual_cursor == '5'
         assert 'mail' not in status
 
-    def test_mail_failure_does_not_break_collection(self, d1, monkeypatch):
-        self._stub(monkeypatch)
+    def test_manual_sync_only_advances_manual_cursor(self, d1, monkeypatch):
+        self._stub_collection(monkeypatch)
+        env = make_env(d1, COLLECT_SOURCES_PER_RUN='1')
 
-        async def boom(env, now_ms=None):
-            raise RuntimeError('Resend HTTP 500: nope')
+        async def scenario():
+            await set_meta(env, 'collect_cursor', '5')
+            await set_meta(env, 'manual_collect_cursor', '17')
+            status = await collector.run_collection(env, allow_cursor=True, now_ms=NOW_MS, manual=True)
+            return (
+                status,
+                await get_meta(env, 'collect_cursor'),
+                await get_meta(env, 'manual_collect_cursor'),
+            )
 
-        monkeypatch.setattr(notify, 'send_daily_report', boom)
-        _, status = self._run_at_cursor(d1, '11')
-        assert status['mail'] == {'ok': False, 'error': 'Resend HTTP 500: nope'}
+        status, cron_cursor, manual_cursor = run(scenario())
         assert status['ok'] == 1
+        assert cron_cursor == '5'
+        assert manual_cursor == '0'

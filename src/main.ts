@@ -556,7 +556,7 @@ function loadArchive(date?: string) {
               )
               .join('') +
             '</ol>'
-          : ui('<p class="dialog-empty">第一期还没付印；明早 08:05 后再来。</p>');
+          : ui('<p class="dialog-empty">第一期还没付印；明早 09:05 后再来。</p>');
       });
   return attempt.catch(() => {
     box.textContent = ui('往期读取失败，稍后再试。');

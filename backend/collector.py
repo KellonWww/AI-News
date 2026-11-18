@@ -635,18 +635,18 @@ async def collect_source(env, source, now):
     raise ValueError('未知源类型 ' + kind)
 
 
-async def _select_sources(env, sources):
-    """Honor explicit `only`; otherwise apply COLLECT_SOURCES_PER_RUN cursor batching."""
+async def _select_sources(env, sources, cursor_key):
+    """Select one bounded batch without coupling cron and manual progress."""
     per_run = int(env_get(env, 'COLLECT_SOURCES_PER_RUN', '0') or 0)
     if per_run <= 0 or per_run >= len(sources):
         return sources, None
-    cursor = int(await get_meta(env, 'collect_cursor', '0') or 0)
+    cursor = int(await get_meta(env, cursor_key, '0') or 0)
     picks = [sources[(cursor + i) % len(sources)] for i in range(per_run)]
     return picks, (cursor + per_run) % len(sources)
 
 
 async def run_collection(env, only=None, allow_cursor=True, now_ms=None, manual=False):
-    """Cron and authenticated manual sync share a cross-isolate lease."""
+    """Cron and manual sync share a lease but keep independent cursors."""
     lease = await claim_window(env, 'collection_lock', LOCK_TTL_MS)
     if lease is None:
         return {'skipped': 'busy', 'retryAfter': retry_seconds(await window_end(env, 'collection_lock'))}
@@ -655,9 +655,9 @@ async def run_collection(env, only=None, allow_cursor=True, now_ms=None, manual=
             permit = await claim_window(env, 'manual_sync_limit', MANUAL_INTERVAL_MS)
             if permit is None:
                 return {'skipped': 'rate_limited', 'retryAfter': retry_seconds(await window_end(env, 'manual_sync_limit'))}
-        # Bound the owner's lifetime below the lease TTL, including digest work.
+        # Bound the owner's lifetime below the lease TTL.
         return await asyncio.wait_for(
-            _run_collection(env, only, allow_cursor, now_ms), COLLECTION_TIMEOUT_SECONDS,
+            _run_collection(env, only, allow_cursor, now_ms, manual), COLLECTION_TIMEOUT_SECONDS,
         )
     except TimeoutError:
         print('collection alert: collection timed out')
@@ -666,20 +666,20 @@ async def run_collection(env, only=None, allow_cursor=True, now_ms=None, manual=
         await release_window(env, 'collection_lock', lease)
 
 
-async def _run_collection(env, only=None, allow_cursor=True, now_ms=None):
-    """Entry point for cron and POST /api/sync (now_ms injectable for tests)."""
+async def _run_collection(env, only=None, allow_cursor=True, now_ms=None, manual=False):
+    """Collect one batch; now_ms remains injectable for deterministic checks."""
     now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
     now = now_iso(now_ms)
     sources = build_sources(now_ms)
-    cycle_complete = False
     if only:
         wanted = set(only)
         sources = [s for s in sources if s['id'] in wanted]
     elif allow_cursor:
-        sources, next_cursor = await _select_sources(env, sources)
+        # Manual refreshes must never move the cron cursor.
+        cursor_key = 'manual_collect_cursor' if manual else 'collect_cursor'
+        sources, next_cursor = await _select_sources(env, sources, cursor_key)
         if next_cursor is not None:
-            await set_meta(env, 'collect_cursor', str(next_cursor))
-            cycle_complete = next_cursor == 0
+            await set_meta(env, cursor_key, str(next_cursor))
 
     results = []
     ok_count = 0
@@ -717,14 +717,4 @@ async def _run_collection(env, only=None, allow_cursor=True, now_ms=None):
 
     status = {'ranAt': now, 'ok': ok_count, 'failed': len(sources) - ok_count, 'sources': results}
     await set_meta(env, 'sync_status', json.dumps(status, ensure_ascii=False, separators=(',', ':')))
-    if cycle_complete:
-        # The 18-source cycle just wrapped (≈ Beijing 08:05): snapshot the
-        # front page, draft the editor's note, send the daily digest — each
-        # step independently guarded inside run_digest.
-        try:
-            from digest import run_digest
-
-            status.update(await run_digest(env, now_ms))
-        except Exception as error:  # noqa: BLE001 — best-effort only
-            print('digest failed:', error)
     return status
