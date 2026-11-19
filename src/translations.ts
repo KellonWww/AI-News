@@ -145,12 +145,17 @@ export const english: Record<string, string> = {
   '第一期还没付印；明早 09:05 后再来。':
     'The first edition is not ready. Check back after 09:05 Beijing time tomorrow.',
   '条 · 付印': 'items / Published',
+  '条信号（近 24 小时）': 'signals in the last 24 hours',
+  ' · 当前保留 ': ' / Retained ',
+  '旧版仅记录库存 ': 'Legacy inventory only: ',
+  ' · 付印 ': ' / Published ',
   返回往期列表: 'Back to editions',
   '这一期没有留下要目。': 'No headlines were archived for this edition.',
   '往期读取失败，稍后再试。': 'Could not load past editions. Please try again.',
   '正在合算…': 'Compiling statistics…',
   '统计读取失败，稍后再试。': 'Could not load statistics. Please try again.',
   每日出刊: 'Daily editions',
+  '每日信号（近 24 小时）': 'Daily signals (last 24 hours)',
   '出刊记录将从第一轮完整采集后开始累积。':
     'Edition history begins after the first full collection.',
   分类分布: 'By category',

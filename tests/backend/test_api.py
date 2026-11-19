@@ -127,7 +127,10 @@ class TestHealth:
 
 def seed_snapshot(env, date, items=42, lead_title='头条'):
     payload = json.dumps({
-        'stats': {'items': items, 'okSources': 11, 'totalSources': 12},
+        'stats': {
+            'items': items, 'dailyItems': items, 'retainedItems': 500,
+            'okSources': 11, 'totalSources': 12,
+        },
         'lead': [{'title': lead_title, 'url': 'https://a/1', 'sourceName': 'GitHub'}],
         'trending': [],
     })

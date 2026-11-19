@@ -8,7 +8,8 @@ import json
 from datetime import datetime, timezone
 
 import ai as ai_module
-from db import db_all, db_first, db_run, set_meta
+from db import db_all, db_run, set_meta
+from metrics import item_counts
 from util import now_iso
 from editorial import select_edition
 
@@ -33,7 +34,7 @@ def _headline(item):
 async def write_daily_snapshot(env, now_ms):
     """Upsert today's front page into daily_snapshots (idempotent per day)."""
     date = _beijing(now_ms).strftime('%Y-%m-%d')
-    total = await db_first(env, 'SELECT COUNT(*) AS n FROM items')
+    counts = await item_counts(env, now_ms)
     source_rows = await db_all(env, 'SELECT status FROM sources')
     edition = await _edition(env, now_ms)
     payload = json.dumps(
@@ -42,7 +43,10 @@ async def write_daily_snapshot(env, now_ms):
             'selectionVersion': 1,
             'generatedAt': now_iso(now_ms),
             'stats': {
-                'items': total['n'] if total else 0,
+                # Keep items as a compatibility alias, but its meaning is now the daily count.
+                'items': counts['dailyItems'],
+                'dailyItems': counts['dailyItems'],
+                'retainedItems': counts['retainedItems'],
                 'okSources': sum(1 for row in source_rows if row['status'] == 'ok'),
                 'totalSources': len(source_rows),
             },

@@ -464,15 +464,20 @@ function renderHealth() {
     .join('');
 }
 
+interface SnapshotStats {
+  items?: number;
+  dailyItems?: number;
+  retainedItems?: number;
+}
 interface ArchiveDay {
   date: string;
   generatedAt: string;
-  stats: { items?: number };
+  stats: SnapshotStats;
 }
 interface ArchiveEdition {
   selectionVersion?: number;
   trending?: { title: string; url: string; sourceName: string }[];
-  stats?: { items?: number };
+  stats?: SnapshotStats;
   lead?: { title: string; url: string; sourceName: string }[];
 }
 interface StatsPayload {
@@ -481,6 +486,12 @@ interface StatsPayload {
   tags: { tag: string; n: number }[];
   sources: { status: string }[];
 }
+const archiveCount = (stats?: SnapshotStats) =>
+  stats?.dailyItems === undefined
+    ? ui('旧版仅记录库存 ') + (stats?.items ?? 0)
+    : stats.dailyItems +
+      ui(' 条信号（近 24 小时）') +
+      (stats.retainedItems === undefined ? '' : ui(' · 当前保留 ') + stats.retainedItems);
 let archiveDays: ArchiveDay[] | null = null;
 let archiveDate: string | undefined;
 async function fetchJson<T>(url: string): Promise<T> {
@@ -500,8 +511,8 @@ function loadArchive(date?: string) {
           '<p class="archive-date">' +
           esc(date) +
           ' · ' +
-          (edition.stats?.items ?? 0) +
-          ui(' 条信号</p>') +
+          archiveCount(edition.stats) +
+          '</p>' +
           (lead.length
             ? '<ol class="archive-lead">' +
               lead
@@ -549,8 +560,8 @@ function loadArchive(date?: string) {
                   '"><strong>' +
                   esc(d.date) +
                   '</strong><span>' +
-                  (d.stats?.items ?? 0) +
-                  ui(' 条 · 付印 ') +
+                  archiveCount(d.stats) +
+                  ui(' · 付印 ') +
                   stampTime.format(new Date(d.generatedAt)) +
                   '</span></button></li>',
               )
@@ -587,7 +598,7 @@ function loadStats() {
       const dayMax = Math.max(1, ...data.days.map((d) => d.items));
       const catMax = Math.max(1, ...data.categories.map((c) => c.n));
       box.innerHTML =
-        ui('<h3>每日出刊</h3>') +
+        ui('<h3>每日信号（近 24 小时）</h3>') +
         (data.days.length
           ? bars(
               data.days.map((d) => ({ label: d.date.slice(5), n: d.items })),

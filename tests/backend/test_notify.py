@@ -36,14 +36,14 @@ def seed(d1, **values):
     ))
     run(db_run(
         env,
-        "INSERT INTO items (id, title, url, source_id, source_name, collected_at, rank_score) VALUES "
-        "('i1', 't1', 'https://a/1', 'github-projects', 'GitHub', '2026-10-06T00:05:00.000Z', 50)",
+        "INSERT INTO items (id, title, url, source_id, source_name, collected_at, item_ts, rank_score) VALUES "
+        "('i1', 't1', 'https://a/1', 'github-projects', 'GitHub', '2026-10-06T00:05:00.000Z', 1759734000000, 50)",
         (),
     ))
     run(db_run(
         env,
-        "INSERT INTO items (id, title, url, source_id, source_name, collected_at, rank_score) VALUES "
-        "('i2', 't2', 'https://a/2', 'qbitai', '量子位', '2026-10-06T00:05:00.000Z', 50)",
+        "INSERT INTO items (id, title, url, source_id, source_name, collected_at, item_ts, rank_score) VALUES "
+        "('i2', 't2', 'https://a/2', 'qbitai', '量子位', '2026-10-06T00:05:00.000Z', 1759734000000, 50)",
         (),
     ))
     run(set_meta(env, 'generated_at', '2026-10-06T00:05:00.000Z'))
@@ -61,8 +61,8 @@ ROWS = [
 class TestBuildReport:
     def test_counts_and_failure_detail(self):
         subject, body, html = notify.build_report(ROWS, 42, '2026-10-06T00:05:00.000Z', NOW_MS)
-        assert subject == 'signal. 日报 10-06：1/2 成功，42 条信号'
-        assert '1 成功 / 1 失败，共 42 条信号' in body
+        assert subject == 'signal. 日报 10-06：1/2 成功，近24小时 42 条信号'
+        assert '1 成功 / 1 失败，近24小时 42 条信号' in body
         assert '- 量子位：失败，12 条，最近成功 —' in body
         assert '- 量子位：HTTP 403' in body
         assert '快照生成：10-06 08:05（北京时间）' in body  # UTC → 北京 +8
@@ -128,7 +128,7 @@ class TestSendDailyReport:
         monkeypatch.setattr(collector, '_http_fetch', fake_fetch)
         result = run(notify.send_daily_report(env, NOW_MS))
         assert result == {'ok': True, 'to': env.MAIL_TO,
-                          'subject': 'signal. 日报 10-06：1/2 成功，2 条信号'}
+                          'subject': 'signal. 日报 10-06：1/2 成功，近24小时 2 条信号'}
         url, init = calls[0]
         assert url == notify.RESEND_URL
         assert init['headers']['Authorization'] == 'Bearer re_key'
@@ -166,7 +166,7 @@ class TestSendDailyReport:
         for offset in range(7, 0, -1):  # last week's seven Beijing days
             day = (base - dt.timedelta(days=offset)).strftime('%Y-%m-%d')
             payload = json.dumps({
-                'stats': {'items': 40 + offset},
+                'stats': {'items': 40 + offset, 'dailyItems': 40 + offset, 'retainedItems': 500},
                 'lead': [{'title': '头条' + day}],
             })
             run(db_run(

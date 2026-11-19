@@ -45,7 +45,10 @@ class TestRunDigest:
         rows = snapshot_row(env)
         assert len(rows) == 1
         payload = json.loads(rows[0]['payload'])
-        assert payload['stats'] == {'items': 1, 'okSources': 1, 'totalSources': 1}
+        assert payload['stats'] == {
+            'items': 1, 'dailyItems': 1, 'retainedItems': 1,
+            'okSources': 1, 'totalSources': 1,
+        }
         assert payload['lead'][0]['title'] == '标题甲'
         assert len(payload['lead']) == 1 and payload['trending'] == []
 

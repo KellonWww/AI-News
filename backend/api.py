@@ -10,6 +10,7 @@ import re
 import time
 
 from db import chunk, db_all, db_first, env_get, get_meta
+from metrics import snapshot_daily_items
 from util import CATEGORY_LABELS, epoch_ms
 
 PUBLIC_CACHE = ('Cache-Control', 'public, max-age=60')
@@ -145,10 +146,12 @@ async def stats(env, generated_at):
         env, 'SELECT date, payload FROM daily_snapshots ORDER BY date DESC LIMIT 30'
     ):
         try:
-            count = (json.loads(row['payload']).get('stats') or {}).get('items') or 0
+            count = snapshot_daily_items(json.loads(row['payload']).get('stats') or {})
         except ValueError:
-            count = 0
-        days.append({'date': row['date'], 'items': count})
+            count = None
+        # Legacy snapshots stored the capped inventory as `items`; do not chart it as daily activity.
+        if count is not None:
+            days.append({'date': row['date'], 'items': count})
     # JOIN items keeps counts honest after the 500-item cap deletes rows.
     categories = await db_all(
         env,
